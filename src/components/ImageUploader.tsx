@@ -86,7 +86,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ onImageSelect }) => {
   };
 
   return (
-    <Card className="relative">
+    <Card className="border-0 shadow-sm overflow-hidden">
       <CardContent className="p-0">
         {!previewImage ? (
           <div
@@ -94,7 +94,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ onImageSelect }) => {
               "flex flex-col items-center justify-center p-8 border-2 border-dashed rounded-lg transition-all",
               dragActive 
                 ? "border-primary bg-primary/5" 
-                : "border-gray-300 hover:border-primary/50"
+                : "border-gray-200 hover:border-primary/50"
             )}
             onDragEnter={handleDrag}
             onDragOver={handleDrag}
@@ -109,7 +109,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ onImageSelect }) => {
               className="hidden"
             />
             <div className="flex flex-col items-center text-center">
-              <div className="p-3 mb-4 rounded-full bg-primary/10">
+              <div className="p-3 mb-4 rounded-full bg-secondary">
                 <ImageIcon className="h-6 w-6 text-primary" />
               </div>
               <h3 className="text-lg font-semibold mb-2">Subir Imagen</h3>
@@ -119,7 +119,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ onImageSelect }) => {
               <p className="text-xs text-muted-foreground mb-6">
                 Formatos soportados: JPEG, PNG. Tamaño máximo: 5MB
               </p>
-              <Button onClick={handleButtonClick} className="medical-gradient">
+              <Button onClick={handleButtonClick}>
                 <Upload size={16} className="mr-2" />
                 Seleccionar archivo
               </Button>
@@ -136,7 +136,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ onImageSelect }) => {
             <Button 
               size="icon" 
               variant="destructive"
-              className="absolute top-2 right-2" 
+              className="absolute top-2 right-2 h-8 w-8" 
               onClick={clearImage}
             >
               <X size={16} />

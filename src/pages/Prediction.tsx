@@ -4,9 +4,10 @@ import Layout from '@/components/Layout';
 import ImageUploader from '@/components/ImageUploader';
 import PredictionResult, { CancerPrediction } from '@/components/PredictionResult';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { toast } from '@/components/ui/use-toast';
-import { AlertCircle, RotateCcw } from 'lucide-react';
+import { AlertCircle, RotateCcw, Microscope } from 'lucide-react';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 
 const Prediction = () => {
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
@@ -90,36 +91,43 @@ const Prediction = () => {
 
         {!prediction ? (
           <div className="grid grid-cols-1 gap-6">
-            <Card className="p-6">
-              <div className="mb-6">
-                <div className="flex items-center p-4 text-blue-800 bg-blue-50 rounded-lg mb-6">
-                  <AlertCircle size={20} className="mr-3 text-blue-500" />
-                  <div className="text-sm">
-                    <p className="font-medium mb-1">Información importante</p>
-                    <p>Esta herramienta está diseñada para ayudar en la detección temprana, pero no reemplaza el diagnóstico profesional. Siempre consulta con un médico especialista.</p>
-                  </div>
+            <Card className="overflow-hidden border-0 shadow-md">
+              <CardHeader className="bg-secondary/50">
+                <CardTitle>Análisis de imagen</CardTitle>
+                <CardDescription>Carga una imagen para realizar la predicción</CardDescription>
+              </CardHeader>
+              <CardContent className="p-6 pt-6">
+                <Alert variant="default" className="mb-6 bg-blue-50 text-blue-800 border-blue-200">
+                  <AlertCircle className="h-4 w-4 text-blue-500" />
+                  <AlertTitle>Información importante</AlertTitle>
+                  <AlertDescription>
+                    Esta herramienta está diseñada para ayudar en la detección temprana, 
+                    pero no reemplaza el diagnóstico profesional. Siempre consulta con un médico especialista.
+                  </AlertDescription>
+                </Alert>
+                
+                <ImageUploader onImageSelect={handleImageSelect} />
+                
+                <div className="flex justify-center mt-6">
+                  <Button
+                    onClick={handleAnalyze}
+                    disabled={!selectedImage || isAnalyzing}
+                    size="lg"
+                  >
+                    {isAnalyzing ? (
+                      <>
+                        <div className="animate-spin mr-2 h-4 w-4 border-2 border-white border-t-transparent rounded-full"></div>
+                        Analizando imagen...
+                      </>
+                    ) : (
+                      <>
+                        <Microscope className="mr-2" />
+                        Analizar imagen
+                      </>
+                    )}
+                  </Button>
                 </div>
-              </div>
-              
-              <ImageUploader onImageSelect={handleImageSelect} />
-              
-              <div className="flex justify-center mt-6">
-                <Button
-                  onClick={handleAnalyze}
-                  disabled={!selectedImage || isAnalyzing}
-                  className="medical-gradient"
-                  size="lg"
-                >
-                  {isAnalyzing ? (
-                    <>
-                      <span className="animate-spin mr-2">⚪</span>
-                      Analizando imagen...
-                    </>
-                  ) : (
-                    'Analizar imagen'
-                  )}
-                </Button>
-              </div>
+              </CardContent>
             </Card>
           </div>
         ) : (

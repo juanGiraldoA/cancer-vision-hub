@@ -74,8 +74,8 @@ const AuthForm: React.FC<AuthFormProps> = ({ type, onSubmit, loading }) => {
   };
 
   return (
-    <Card className="w-full max-w-md mx-auto shadow-lg">
-      <CardHeader className="space-y-1">
+    <Card className="w-full max-w-md mx-auto border-0 shadow-lg">
+      <CardHeader className="space-y-1 bg-secondary/30">
         <CardTitle className="text-2xl font-bold text-center">
           {titles[type].title}
         </CardTitle>
@@ -83,7 +83,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ type, onSubmit, loading }) => {
           {titles[type].description}
         </CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="pt-6">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
             {type === 'register' && (
@@ -150,11 +150,14 @@ const AuthForm: React.FC<AuthFormProps> = ({ type, onSubmit, loading }) => {
 
             <Button 
               type="submit" 
-              className="w-full medical-gradient" 
+              className="w-full" 
               disabled={loading}
             >
               {loading ? (
-                <><span className="animate-spin mr-2">⚪</span> Procesando...</>
+                <>
+                  <span className="animate-spin mr-2 h-4 w-4 border-2 border-white border-t-transparent rounded-full"></span>
+                  Procesando...
+                </>
               ) : (
                 titles[type].buttonText
               )}
@@ -162,7 +165,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ type, onSubmit, loading }) => {
           </form>
         </Form>
       </CardContent>
-      <CardFooter className="flex flex-col space-y-2">
+      <CardFooter className="flex flex-col space-y-2 bg-gray-50">
         {type === 'login' && (
           <>
             <Button variant="link" asChild className="text-sm">

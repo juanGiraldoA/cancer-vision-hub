@@ -79,7 +79,7 @@ const TrainingUpload: React.FC<TrainingUploadProps> = ({ onFileSelect }) => {
   };
 
   return (
-    <Card>
+    <Card className="border-0 shadow-sm">
       <CardContent className="p-4">
         {!selectedFile ? (
           <div
@@ -87,7 +87,7 @@ const TrainingUpload: React.FC<TrainingUploadProps> = ({ onFileSelect }) => {
               "flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-lg transition-all",
               dragActive 
                 ? "border-primary bg-primary/5" 
-                : "border-gray-300 hover:border-primary/50"
+                : "border-gray-200 hover:border-primary/50"
             )}
             onDragEnter={handleDrag}
             onDragOver={handleDrag}
@@ -112,7 +112,7 @@ const TrainingUpload: React.FC<TrainingUploadProps> = ({ onFileSelect }) => {
               <p className="text-xs text-muted-foreground mb-6">
                 Formatos soportados: Excel (.xlsx), CSV (.csv). Tamaño máximo: 10MB
               </p>
-              <Button onClick={handleButtonClick} className="medical-gradient">
+              <Button onClick={handleButtonClick}>
                 <Upload size={16} className="mr-2" />
                 Seleccionar archivo
               </Button>

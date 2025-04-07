@@ -3,13 +3,14 @@ import React, { useState } from 'react';
 import Layout from '@/components/Layout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PredictionHistoryTable, TrainingHistoryTable } from '@/components/HistoryTable';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { FileSpreadsheet } from 'lucide-react';
+import { FileSpreadsheet, BarChart } from 'lucide-react';
 import TrainingUpload from '@/components/TrainingUpload';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { toast } from '@/components/ui/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 
 // Mock data for prediction history
 const mockPredictions = [
@@ -86,10 +87,12 @@ const History = () => {
   const [isTrainingDialogOpen, setIsTrainingDialogOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isTraining, setIsTraining] = useState(false);
+  const [trainingSuccess, setTrainingSuccess] = useState(false);
   const { currentUser } = useAuth();
   
   const handleFileSelect = (file: File) => {
     setSelectedFile(file);
+    setTrainingSuccess(false);
   };
 
   const handleStartTraining = async () => {
@@ -108,13 +111,12 @@ const History = () => {
       // Simulate API call with a delay
       await new Promise(resolve => setTimeout(resolve, 5000));
 
+      setTrainingSuccess(true);
+      
       toast({
         title: "Entrenamiento completado",
         description: "El modelo ha sido reentrenado exitosamente",
       });
-
-      setIsTrainingDialogOpen(false);
-      setSelectedFile(null);
     } catch (error) {
       console.error('Error during training:', error);
       toast({
@@ -125,6 +127,12 @@ const History = () => {
     } finally {
       setIsTraining(false);
     }
+  };
+
+  const handleCloseDialog = () => {
+    setIsTrainingDialogOpen(false);
+    setSelectedFile(null);
+    setTrainingSuccess(false);
   };
 
   return (
@@ -138,7 +146,7 @@ const History = () => {
             </p>
           </div>
           {currentUser?.role === 'admin' && (
-            <Button className="medical-gradient" onClick={() => setIsTrainingDialogOpen(true)}>
+            <Button onClick={() => setIsTrainingDialogOpen(true)}>
               <FileSpreadsheet size={16} className="mr-2" />
               Reentrenar modelo
             </Button>
@@ -146,13 +154,17 @@ const History = () => {
         </div>
 
         <Tabs defaultValue="predictions" className="space-y-6">
-          <TabsList>
+          <TabsList className="grid w-full max-w-md grid-cols-2">
             <TabsTrigger value="predictions">Predicciones</TabsTrigger>
             <TabsTrigger value="trainings">Entrenamientos</TabsTrigger>
           </TabsList>
           
           <TabsContent value="predictions">
-            <Card>
+            <Card className="border-0 shadow-md">
+              <CardHeader className="bg-secondary/50">
+                <CardTitle>Historial de predicciones</CardTitle>
+                <CardDescription>Registro de predicciones realizadas</CardDescription>
+              </CardHeader>
               <CardContent className="pt-6">
                 <PredictionHistoryTable history={mockPredictions} />
               </CardContent>
@@ -160,7 +172,11 @@ const History = () => {
           </TabsContent>
           
           <TabsContent value="trainings">
-            <Card>
+            <Card className="border-0 shadow-md">
+              <CardHeader className="bg-secondary/50">
+                <CardTitle>Historial de entrenamientos</CardTitle>
+                <CardDescription>Registro de entrenamientos del modelo</CardDescription>
+              </CardHeader>
               <CardContent className="pt-6">
                 <TrainingHistoryTable history={mockTrainings} />
               </CardContent>
@@ -171,7 +187,7 @@ const History = () => {
 
       {/* Training Dialog */}
       <Dialog open={isTrainingDialogOpen} onOpenChange={setIsTrainingDialogOpen}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Reentrenar Modelo</DialogTitle>
             <DialogDescription>
@@ -179,35 +195,62 @@ const History = () => {
             </DialogDescription>
           </DialogHeader>
           
-          <div className="space-y-4 py-4">
-            <TrainingUpload onFileSelect={handleFileSelect} />
-            
-            {selectedFile && (
-              <div className="p-4 bg-blue-50 text-blue-800 rounded-lg text-sm">
-                <p className="font-medium mb-1">Información importante</p>
-                <p>El reentrenamiento puede tomar varios minutos dependiendo del tamaño del archivo. No cierre esta ventana durante el proceso.</p>
+          {trainingSuccess ? (
+            <div className="py-6">
+              <div className="flex flex-col items-center justify-center text-center space-y-4">
+                <div className="h-16 w-16 rounded-full bg-green-100 flex items-center justify-center">
+                  <svg className="h-8 w-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+                <h3 className="text-lg font-medium text-gray-900">Modelo reentrenado correctamente</h3>
+                <p className="text-sm text-gray-500">
+                  El modelo ha sido actualizado con los nuevos datos. Las predicciones ahora utilizarán este modelo mejorado.
+                </p>
+                <div className="mt-4 flex items-center justify-center gap-4">
+                  <BarChart size={20} className="text-blue-500" />
+                  <div className="text-left">
+                    <p className="text-sm font-medium">Precisión del nuevo modelo: 96%</p>
+                    <p className="text-xs text-gray-500">Mejora: +2% respecto al modelo anterior</p>
+                  </div>
+                </div>
               </div>
-            )}
-          </div>
+            </div>
+          ) : (
+            <div className="space-y-4 py-4">
+              <TrainingUpload onFileSelect={handleFileSelect} />
+              
+              {selectedFile && (
+                <Alert variant="default" className="bg-blue-50 text-blue-800 border-blue-200">
+                  <AlertTitle>Información importante</AlertTitle>
+                  <AlertDescription>
+                    El reentrenamiento puede tomar varios minutos dependiendo del tamaño del archivo. 
+                    No cierre esta ventana durante el proceso.
+                  </AlertDescription>
+                </Alert>
+              )}
+            </div>
+          )}
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsTrainingDialogOpen(false)} disabled={isTraining}>
-              Cancelar
+            <Button variant="outline" onClick={handleCloseDialog}>
+              {trainingSuccess ? 'Cerrar' : 'Cancelar'}
             </Button>
-            <Button 
-              onClick={handleStartTraining} 
-              disabled={!selectedFile || isTraining}
-              className="medical-gradient"
-            >
-              {isTraining ? (
-                <>
-                  <span className="animate-spin mr-2">⚪</span>
-                  Entrenando...
-                </>
-              ) : (
-                'Iniciar entrenamiento'
-              )}
-            </Button>
+            {!trainingSuccess && (
+              <Button 
+                onClick={handleStartTraining} 
+                disabled={!selectedFile || isTraining}
+              >
+                {isTraining ? (
+                  <>
+                    <div className="animate-spin mr-2 h-4 w-4 border-2 border-white border-t-transparent rounded-full"></div>
+                    Entrenando...
+                  </>
+                ) : (
+                  'Iniciar entrenamiento'
+                )}
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>

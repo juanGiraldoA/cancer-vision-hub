@@ -4,11 +4,11 @@ import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import AuthForm from '@/components/AuthForm';
 
-const Index = () => {
-  const { login, isAuthenticated, loading } = useAuth();
+const Register = () => {
+  const { register, isAuthenticated, loading } = useAuth();
 
-  const handleLogin = (data: { email: string; password: string }) => {
-    login(data.email, data.password);
+  const handleRegister = (data: { name: string; email: string; password: string }) => {
+    register(data.name, data.email, data.password);
   };
 
   if (isAuthenticated) {
@@ -21,14 +21,14 @@ const Index = () => {
         <div className="text-center">
           <h1 className="text-3xl font-extrabold text-gray-900">CancerVisionHub</h1>
           <p className="mt-2 text-sm text-gray-600">
-            Plataforma de detección y análisis de cáncer
+            Crea una cuenta para acceder a la plataforma
           </p>
         </div>
         
         <div className="mt-8">
           <AuthForm 
-            type="login" 
-            onSubmit={handleLogin} 
+            type="register" 
+            onSubmit={handleRegister} 
             loading={loading} 
           />
         </div>
@@ -37,4 +37,4 @@ const Index = () => {
   );
 };
 
-export default Index;
+export default Register;

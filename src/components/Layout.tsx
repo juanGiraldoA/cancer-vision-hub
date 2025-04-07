@@ -9,6 +9,9 @@ interface LayoutProps {
   requireAuth?: boolean;
 }
 
+// For testing purposes, you can set this to false to bypass authentication
+const BYPASS_AUTH_FOR_TESTING = false;
+
 const Layout: React.FC<LayoutProps> = ({ children, requireAuth = true }) => {
   const { isAuthenticated, loading } = useAuth();
 
@@ -20,13 +23,14 @@ const Layout: React.FC<LayoutProps> = ({ children, requireAuth = true }) => {
     );
   }
 
-  if (requireAuth && !isAuthenticated) {
+  // Allow bypass for testing or check authentication
+  if (requireAuth && !isAuthenticated && !BYPASS_AUTH_FOR_TESTING) {
     return <Navigate to="/" />;
   }
 
   return (
     <div className="min-h-screen bg-background">
-      {isAuthenticated && <Navbar />}
+      {(isAuthenticated || BYPASS_AUTH_FOR_TESTING) && <Navbar />}
       <main className="container mx-auto py-6 px-4 md:px-6">
         {children}
       </main>

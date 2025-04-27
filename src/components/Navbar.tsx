@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -36,8 +35,7 @@ const Navbar = () => {
     { path: '/history', label: 'Historial', icon: <History size={18} /> },
   ];
 
-  // Add user management for admin users
-  if (currentUser?.role === 'admin') {
+  if (currentUser?.role === 'ADMIN') {
     navItems.splice(1, 0, { 
       path: '/users', 
       label: 'Usuarios', 
@@ -101,7 +99,6 @@ const Navbar = () => {
         </div>
       </div>
 
-      {/* Mobile navigation */}
       <div className="md:hidden border-t">
         <div className="grid grid-cols-4 gap-1">
           {navItems.map((item) => (

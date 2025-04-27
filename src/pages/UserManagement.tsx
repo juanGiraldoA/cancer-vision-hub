@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Layout from '@/components/Layout';
@@ -84,7 +83,7 @@ const UserManagement = () => {
     await deleteUserMutation.mutateAsync(userId);
   };
 
-  if (!currentUser?.role || currentUser.role !== 'admin') {
+  if (!currentUser?.role || currentUser.role !== 'ADMIN') {
     return (
       <Layout>
         <div className="text-center py-10">

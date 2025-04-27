@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { 
   Table, 
@@ -86,12 +85,12 @@ const UserTable: React.FC<UserTableProps> = ({
                 <TableCell>
                   <span 
                     className={`px-2 py-1 rounded text-xs font-semibold ${
-                      user.role === 'admin' 
+                      user.role === 'ADMIN' 
                         ? 'bg-purple-100 text-purple-800' 
                         : 'bg-blue-100 text-blue-800'
                     }`}
                   >
-                    {user.role === 'admin' ? 'Administrador' : 'Usuario'}
+                    {user.role === 'ADMIN' ? 'Administrador' : 'Usuario'}
                   </span>
                 </TableCell>
                 <TableCell>

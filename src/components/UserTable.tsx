@@ -31,15 +31,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Pencil, Trash2, UserPlus } from 'lucide-react';
 import { toast } from '@/components/ui/use-toast';
-
-export interface User {
-  id: number;
-  name: string;
-  email: string;
-  role: string;
-  createdAt: string;
-  status: 'active' | 'inactive';
-}
+import { User } from '@/types/user';
 
 interface UserTableProps {
   users: User[];
@@ -52,6 +44,7 @@ interface UserTableProps {
 const userFormSchema = z.object({
   name: z.string().min(2, 'El nombre debe tener al menos 2 caracteres'),
   email: z.string().email('Correo electrónico inválido'),
+  cc: z.string().min(1, 'La cédula es requerida'),
   password: z
     .string()
     .min(6, 'La contraseña debe tener al menos 6 caracteres')
@@ -77,6 +70,7 @@ const UserTable: React.FC<UserTableProps> = ({
     defaultValues: {
       name: '',
       email: '',
+      cc: '',
       password: '',
       role: 'user',
       status: 'active',
@@ -94,8 +88,9 @@ const UserTable: React.FC<UserTableProps> = ({
   const onEditUser = (user: User) => {
     setSelectedUser(user);
     form.reset({
-      name: user.name,
+      name: user.name || '',
       email: user.email,
+      cc: user.cc,
       password: '',
       role: user.role,
       status: user.status,
@@ -137,6 +132,7 @@ const UserTable: React.FC<UserTableProps> = ({
     form.reset({
       name: '',
       email: '',
+      cc: '',
       password: '',
       role: 'user',
       status: 'active',
@@ -156,6 +152,7 @@ const UserTable: React.FC<UserTableProps> = ({
     onUserCreate({
       name: values.name,
       email: values.email,
+      cc: values.cc,
       role: values.role,
       status: values.status,
     });
@@ -184,6 +181,7 @@ const UserTable: React.FC<UserTableProps> = ({
               <TableHead className="w-[60px]">ID</TableHead>
               <TableHead>Nombre</TableHead>
               <TableHead>Correo</TableHead>
+              <TableHead>Cédula</TableHead>
               <TableHead>Rol</TableHead>
               <TableHead>Estado</TableHead>
               <TableHead>Creado</TableHead>
@@ -196,6 +194,7 @@ const UserTable: React.FC<UserTableProps> = ({
                 <TableCell className="font-medium">{user.id}</TableCell>
                 <TableCell>{user.name}</TableCell>
                 <TableCell>{user.email}</TableCell>
+                 <TableCell>{user.cc}</TableCell>
                 <TableCell>
                   <span 
                     className={`px-2 py-1 rounded text-xs font-semibold ${
@@ -218,7 +217,7 @@ const UserTable: React.FC<UserTableProps> = ({
                     {user.status === 'active' ? 'Activo' : 'Inactivo'}
                   </span>
                 </TableCell>
-                <TableCell>{new Date(user.createdAt).toLocaleDateString()}</TableCell>
+                <TableCell>{new Date(user.createdAt || Date.now()).toLocaleDateString()}</TableCell>
                 <TableCell className="text-right">
                   <Button 
                     variant="ghost" 
@@ -281,6 +280,19 @@ const UserTable: React.FC<UserTableProps> = ({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Correo electrónico</FormLabel>
+                    <FormControl>
+                      <Input {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+               <FormField
+                control={form.control}
+                name="cc"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Cédula</FormLabel>
                     <FormControl>
                       <Input {...field} />
                     </FormControl>
@@ -394,6 +406,19 @@ const UserTable: React.FC<UserTableProps> = ({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Correo electrónico</FormLabel>
+                    <FormControl>
+                      <Input {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+               <FormField
+                control={form.control}
+                name="cc"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Cédula</FormLabel>
                     <FormControl>
                       <Input {...field} />
                     </FormControl>

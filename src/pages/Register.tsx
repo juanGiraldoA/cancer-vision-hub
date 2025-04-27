@@ -7,8 +7,8 @@ import AuthForm from '@/components/AuthForm';
 const Register = () => {
   const { register, isAuthenticated, loading } = useAuth();
 
-  const handleRegister = (data: { name: string; email: string; password: string }) => {
-    register(data.name, data.email, data.password);
+  const handleRegister = (data: { cc: string; email: string; password: string }) => {
+    register(data.cc, data.email, data.password);
   };
 
   if (isAuthenticated) {

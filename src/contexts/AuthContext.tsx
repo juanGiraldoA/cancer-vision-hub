@@ -1,4 +1,3 @@
-
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from "@/components/ui/use-toast";
@@ -7,7 +6,7 @@ interface User {
   cc: string;
   email: string;
   role: string;
-  name: string; // Added name property
+  name: string;
 }
 
 interface AuthTokens {
@@ -22,7 +21,7 @@ interface AuthContextType {
   logout: () => void;
   loading: boolean;
   forgotPassword: (email: string) => Promise<void>;
-  register: (name: string, email: string, password: string) => Promise<void>;
+  register: (cc: string, email: string, password: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -41,7 +40,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Check if user and tokens are in localStorage
     const storedUser = localStorage.getItem('currentUser');
     if (storedUser) {
       setCurrentUser(JSON.parse(storedUser));
@@ -65,17 +63,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       const data: AuthTokens = await response.json();
       
-      // Decode the JWT token to get user information
       const tokenPayload = JSON.parse(atob(data.access.split('.')[1]));
       
       const user: User = {
         cc: tokenPayload.cc,
         email: tokenPayload.email,
         role: tokenPayload.role,
-        name: tokenPayload.name || 'Usuario', // Extract name from token or default to "Usuario"
+        name: tokenPayload.name || 'Usuario',
       };
 
-      // Store tokens and user data
       localStorage.setItem('accessToken', data.access);
       localStorage.setItem('refreshToken', data.refresh);
       localStorage.setItem('currentUser', JSON.stringify(user));
@@ -115,7 +111,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const forgotPassword = async (email: string) => {
     setLoading(true);
     try {
-      // This is a placeholder implementation - replace with actual API call
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       toast({
@@ -135,12 +130,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const register = async (name: string, email: string, password: string) => {
+  const register = async (cc: string, email: string, password: string) => {
     setLoading(true);
     try {
-      // This is a placeholder implementation - replace with actual API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
+      const response = await fetch('http://127.0.0.1:8000/api/login/registrarse/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ cc, email, password }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Error en el registro');
+      }
+
       toast({
         title: "Registro exitoso",
         description: "Tu cuenta ha sido creada, ahora puedes iniciar sesión",
@@ -148,6 +152,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       navigate('/');
     } catch (error) {
+      console.error('Register error:', error);
       toast({
         variant: "destructive",
         title: "Error de registro",

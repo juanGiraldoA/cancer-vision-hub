@@ -7,6 +7,7 @@ interface User {
   cc: string;
   email: string;
   role: string;
+  name: string; // Added name property
 }
 
 interface AuthTokens {
@@ -20,6 +21,9 @@ interface AuthContextType {
   login: (cc: string, password: string) => Promise<void>;
   logout: () => void;
   loading: boolean;
+  // Add these methods to fix errors in ForgotPassword and Register pages
+  forgotPassword: (email: string) => Promise<void>;
+  register: (name: string, email: string, password: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -70,6 +74,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         cc: tokenPayload.cc,
         email: tokenPayload.email,
         role: tokenPayload.role,
+        name: tokenPayload.name || 'Usuario', // Extract name from token or default to "Usuario"
       };
 
       // Store tokens and user data
@@ -109,12 +114,62 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     navigate('/');
   };
 
+  // Add forgotPassword method to fix errors in ForgotPassword page
+  const forgotPassword = async (email: string) => {
+    setLoading(true);
+    try {
+      // This is a placeholder implementation - replace with actual API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      toast({
+        title: "Correo enviado",
+        description: "Se ha enviado un correo con instrucciones para restablecer tu contraseña",
+      });
+      
+      navigate('/');
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "No se pudo enviar el correo de recuperación",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Add register method to fix errors in Register page
+  const register = async (name: string, email: string, password: string) => {
+    setLoading(true);
+    try {
+      // This is a placeholder implementation - replace with actual API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      toast({
+        title: "Registro exitoso",
+        description: "Tu cuenta ha sido creada, ahora puedes iniciar sesión",
+      });
+      
+      navigate('/');
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error de registro",
+        description: "No se pudo completar el registro",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const value = {
     currentUser,
     isAuthenticated: !!currentUser,
     login,
     logout,
-    loading
+    loading,
+    forgotPassword,
+    register
   };
 
   return (

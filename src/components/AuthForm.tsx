@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 
 interface AuthFormProps {
-  type: 'login';
+  type: 'login' | 'register' | 'forgotPassword';
   onSubmit: (data: any) => void;
   loading: boolean;
 }
@@ -19,59 +19,147 @@ const loginSchema = z.object({
   password: z.string().min(6, 'La contraseña debe tener al menos 6 caracteres'),
 });
 
+const registerSchema = z.object({
+  name: z.string().min(2, 'El nombre debe tener al menos 2 caracteres'),
+  email: z.string().email('Correo electrónico inválido'),
+  password: z.string().min(6, 'La contraseña debe tener al menos 6 caracteres'),
+});
+
+const forgotPasswordSchema = z.object({
+  email: z.string().email('Correo electrónico inválido'),
+});
+
 const AuthForm: React.FC<AuthFormProps> = ({ type, onSubmit, loading }) => {
-  const form = useForm<z.infer<typeof loginSchema>>({
-    resolver: zodResolver(loginSchema),
-    defaultValues: {
-      cc: '',
-      password: '',
-    },
+  // Select the appropriate schema based on form type
+  const schema = 
+    type === 'login' ? loginSchema : 
+    type === 'register' ? registerSchema :
+    forgotPasswordSchema;
+  
+  // Create form with the selected schema
+  const form = useForm<z.infer<typeof schema>>({
+    resolver: zodResolver(schema),
+    defaultValues: 
+      type === 'login' ? {
+        cc: '',
+        password: '',
+      } : 
+      type === 'register' ? {
+        name: '',
+        email: '',
+        password: '',
+      } : {
+        email: '',
+      },
   });
 
-  const handleSubmit = (values: z.infer<typeof loginSchema>) => {
+  const handleSubmit = (values: z.infer<typeof schema>) => {
     onSubmit(values);
+  };
+
+  const getTitle = () => {
+    switch (type) {
+      case 'login': return 'Iniciar Sesión';
+      case 'register': return 'Crear Cuenta';
+      case 'forgotPassword': return 'Recuperar Contraseña';
+      default: return 'Autenticación';
+    }
+  };
+
+  const getDescription = () => {
+    switch (type) {
+      case 'login': return 'Ingresa tus credenciales para acceder al sistema';
+      case 'register': return 'Ingresa tus datos para crear una cuenta nueva';
+      case 'forgotPassword': return 'Ingresa tu correo para recuperar tu contraseña';
+      default: return '';
+    }
+  };
+
+  const getButtonText = () => {
+    switch (type) {
+      case 'login': return 'Iniciar Sesión';
+      case 'register': return 'Registrarse';
+      case 'forgotPassword': return 'Enviar Correo';
+      default: return 'Enviar';
+    }
   };
 
   return (
     <Card className="w-full max-w-md mx-auto border-0 shadow-lg">
       <CardHeader className="space-y-1 bg-secondary/30">
         <CardTitle className="text-2xl font-bold text-center">
-          Iniciar Sesión
+          {getTitle()}
         </CardTitle>
         <CardDescription className="text-center">
-          Ingresa tus credenciales para acceder al sistema
+          {getDescription()}
         </CardDescription>
       </CardHeader>
       <CardContent className="pt-6">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="cc"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Cédula de Ciudadanía</FormLabel>
-                  <FormControl>
-                    <Input type="text" placeholder="Ingresa tu cédula" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            {type === 'register' && (
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Nombre Completo</FormLabel>
+                    <FormControl>
+                      <Input type="text" placeholder="Ingresa tu nombre" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
 
-            <FormField
-              control={form.control}
-              name="password"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Contraseña</FormLabel>
-                  <FormControl>
-                    <Input type="password" placeholder="******" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            {(type === 'register' || type === 'forgotPassword') && (
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Correo Electrónico</FormLabel>
+                    <FormControl>
+                      <Input type="email" placeholder="correo@ejemplo.com" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+
+            {type === 'login' && (
+              <FormField
+                control={form.control}
+                name="cc"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Cédula de Ciudadanía</FormLabel>
+                    <FormControl>
+                      <Input type="text" placeholder="Ingresa tu cédula" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+
+            {(type === 'login' || type === 'register') && (
+              <FormField
+                control={form.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Contraseña</FormLabel>
+                    <FormControl>
+                      <Input type="password" placeholder="******" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
 
             <Button 
               type="submit" 
@@ -84,7 +172,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ type, onSubmit, loading }) => {
                   Procesando...
                 </>
               ) : (
-                'Iniciar Sesión'
+                getButtonText()
               )}
             </Button>
           </form>

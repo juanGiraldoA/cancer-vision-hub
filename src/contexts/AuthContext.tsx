@@ -6,7 +6,7 @@ interface User {
   cc: string;
   email: string;
   role: string;
-  name: string;
+  name?: string;
 }
 
 interface AuthTokens {

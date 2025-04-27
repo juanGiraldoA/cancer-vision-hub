@@ -1,90 +1,95 @@
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Layout from '@/components/Layout';
-import UserTable, { User } from '@/components/UserTable';
+import { useAuth } from '@/contexts/AuthContext';
+import UserTable from '@/components/UserTable';
 import { toast } from '@/components/ui/use-toast';
-
-const mockUsers: User[] = [
-  {
-    id: 1,
-    name: 'Admin User',
-    email: 'admin@example.com',
-    role: 'admin',
-    status: 'active',
-    createdAt: '2024-01-15T10:00:00',
-  },
-  {
-    id: 2,
-    name: 'Test User',
-    email: 'user@example.com',
-    role: 'user',
-    status: 'active',
-    createdAt: '2024-01-20T14:30:00',
-  },
-  {
-    id: 3,
-    name: 'María González',
-    email: 'maria@example.com',
-    role: 'user',
-    status: 'active',
-    createdAt: '2024-02-05T09:15:00',
-  },
-  {
-    id: 4,
-    name: 'Carlos Rodríguez',
-    email: 'carlos@example.com',
-    role: 'user',
-    status: 'inactive',
-    createdAt: '2024-02-10T16:45:00',
-  },
-];
+import { userService } from '@/services/userService';
+import type { User } from '@/types/user';
 
 const UserManagement = () => {
-  const [users, setUsers] = useState<User[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const { currentUser } = useAuth();
+  const token = localStorage.getItem('accessToken') || '';
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    // Simulate API call
-    const fetchUsers = async () => {
-      try {
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        setUsers(mockUsers);
-      } catch (error) {
-        toast({
-          variant: "destructive",
-          title: "Error",
-          description: "Ha ocurrido un error al cargar los usuarios",
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    };
+  const { data: users = [], isLoading } = useQuery({
+    queryKey: ['users'],
+    queryFn: () => userService.getUsers(token),
+  });
 
-    fetchUsers();
-  }, []);
+  const createUserMutation = useMutation({
+    mutationFn: (newUser: Omit<User, 'id'>) => userService.createUser(newUser, token),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+      toast({
+        title: "Usuario creado",
+        description: "El usuario ha sido creado exitosamente",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.message || "Ha ocurrido un error al crear el usuario",
+      });
+    },
+  });
 
-  const handleUserUpdate = (updatedUser: User) => {
-    setUsers(users.map(user => user.id === updatedUser.id ? updatedUser : user));
+  const updateUserMutation = useMutation({
+    mutationFn: ({ id, ...data }: User) => userService.updateUser(id, data, token),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+      toast({
+        title: "Usuario actualizado",
+        description: "El usuario ha sido actualizado exitosamente",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.message || "Ha ocurrido un error al actualizar el usuario",
+      });
+    },
+  });
+
+  const deleteUserMutation = useMutation({
+    mutationFn: (id: number) => userService.deleteUser(id, token),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+      toast({
+        title: "Usuario eliminado",
+        description: "El usuario ha sido eliminado exitosamente",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.message || "Ha ocurrido un error al eliminar el usuario",
+      });
+    },
+  });
+
+  const handleUserCreate = async (userData: Omit<User, 'id'>) => {
+    await createUserMutation.mutateAsync(userData);
   };
 
-  const handleUserDelete = (userId: number) => {
-    setUsers(users.filter(user => user.id !== userId));
+  const handleUserUpdate = async (updatedUser: User) => {
+    await updateUserMutation.mutateAsync(updatedUser);
   };
 
-  const handleUserCreate = (newUser: Omit<User, 'id' | 'createdAt'>) => {
-    const createdUser: User = {
-      ...newUser,
-      id: Math.max(0, ...users.map(u => u.id)) + 1,
-      createdAt: new Date().toISOString(),
-    };
-    setUsers([...users, createdUser]);
+  const handleUserDelete = async (userId: number) => {
+    await deleteUserMutation.mutateAsync(userId);
   };
 
-  if (isLoading) {
+  if (!currentUser?.role || currentUser.role !== 'admin') {
     return (
       <Layout>
-        <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+        <div className="text-center py-10">
+          <h2 className="text-2xl font-bold text-gray-900">Acceso Denegado</h2>
+          <p className="mt-2 text-gray-600">No tienes permisos para acceder a esta sección.</p>
         </div>
       </Layout>
     );
@@ -102,10 +107,11 @@ const UserManagement = () => {
 
         <div className="space-y-4">
           <UserTable 
-            users={users} 
-            onUserUpdate={handleUserUpdate} 
+            users={users}
+            onUserUpdate={handleUserUpdate}
             onUserDelete={handleUserDelete}
             onUserCreate={handleUserCreate}
+            loading={isLoading}
           />
         </div>
       </div>

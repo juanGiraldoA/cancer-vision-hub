@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { 
   Table, 
@@ -46,7 +45,8 @@ interface UserTableProps {
   users: User[];
   onUserUpdate: (user: User) => void;
   onUserDelete: (userId: number) => void;
-  onUserCreate: (user: Omit<User, 'id' | 'createdAt'>) => void;
+  onUserCreate: (user: Omit<User, 'id'>) => void;
+  loading?: boolean;
 }
 
 const userFormSchema = z.object({
@@ -64,7 +64,8 @@ const UserTable: React.FC<UserTableProps> = ({
   users, 
   onUserUpdate, 
   onUserDelete,
-  onUserCreate
+  onUserCreate,
+  loading = false
 }) => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -81,6 +82,14 @@ const UserTable: React.FC<UserTableProps> = ({
       status: 'active',
     },
   });
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   const onEditUser = (user: User) => {
     setSelectedUser(user);

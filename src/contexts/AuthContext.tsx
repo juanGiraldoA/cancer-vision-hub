@@ -4,19 +4,21 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from "@/components/ui/use-toast";
 
 interface User {
-  id: number;
-  name: string;
+  cc: string;
   email: string;
   role: string;
+}
+
+interface AuthTokens {
+  access: string;
+  refresh: string;
 }
 
 interface AuthContextType {
   currentUser: User | null;
   isAuthenticated: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  register: (name: string, email: string, password: string) => Promise<void>;
+  login: (cc: string, password: string) => Promise<void>;
   logout: () => void;
-  forgotPassword: (email: string) => Promise<void>;
   loading: boolean;
 }
 
@@ -35,14 +37,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  // Mock users for demonstration
-  const mockUsers = [
-    { id: 1, name: 'Admin User', email: 'admin@example.com', password: 'admin123', role: 'admin' },
-    { id: 2, name: 'Test User', email: 'user@example.com', password: 'user123', role: 'user' },
-  ];
-
   useEffect(() => {
-    // Check if user is logged in from localStorage
+    // Check if user and tokens are in localStorage
     const storedUser = localStorage.getItem('currentUser');
     if (storedUser) {
       setCurrentUser(JSON.parse(storedUser));
@@ -50,69 +46,51 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setLoading(false);
   }, []);
 
-  const login = async (email: string, password: string) => {
+  const login = async (cc: string, password: string) => {
     setLoading(true);
     try {
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      const user = mockUsers.find(u => u.email === email && u.password === password);
-      
-      if (user) {
-        const { password, ...userWithoutPassword } = user;
-        setCurrentUser(userWithoutPassword);
-        localStorage.setItem('currentUser', JSON.stringify(userWithoutPassword));
-        toast({
-          title: "Inicio de sesión exitoso",
-          description: "Bienvenido de nuevo",
-        });
-        navigate('/dashboard');
-      } else {
-        toast({
-          variant: "destructive",
-          title: "Error de inicio de sesión",
-          description: "Credenciales inválidas",
-        });
+      const response = await fetch('http://127.0.0.1:8000/api/login/iniciar-sesion/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ cc, password }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Credenciales inválidas');
       }
+
+      const data: AuthTokens = await response.json();
+      
+      // Decode the JWT token to get user information
+      const tokenPayload = JSON.parse(atob(data.access.split('.')[1]));
+      
+      const user: User = {
+        cc: tokenPayload.cc,
+        email: tokenPayload.email,
+        role: tokenPayload.role,
+      };
+
+      // Store tokens and user data
+      localStorage.setItem('accessToken', data.access);
+      localStorage.setItem('refreshToken', data.refresh);
+      localStorage.setItem('currentUser', JSON.stringify(user));
+      
+      setCurrentUser(user);
+      
+      toast({
+        title: "Inicio de sesión exitoso",
+        description: "Bienvenido de nuevo",
+      });
+      
+      navigate('/dashboard');
     } catch (error) {
       console.error('Login error:', error);
       toast({
         variant: "destructive",
-        title: "Error",
-        description: "Ha ocurrido un error durante el inicio de sesión",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const register = async (name: string, email: string, password: string) => {
-    setLoading(true);
-    try {
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Check if user already exists
-      if (mockUsers.some(u => u.email === email)) {
-        toast({
-          variant: "destructive",
-          title: "Error de registro",
-          description: "El correo electrónico ya está en uso",
-        });
-        return;
-      }
-      
-      toast({
-        title: "Registro exitoso",
-        description: "Ahora puedes iniciar sesión con tus credenciales",
-      });
-      navigate('/');
-    } catch (error) {
-      console.error('Register error:', error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Ha ocurrido un error durante el registro",
+        title: "Error de inicio de sesión",
+        description: "Credenciales inválidas",
       });
     } finally {
       setLoading(false);
@@ -122,6 +100,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = () => {
     setCurrentUser(null);
     localStorage.removeItem('currentUser');
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
     toast({
       title: "Sesión cerrada",
       description: "Has cerrado sesión exitosamente",
@@ -129,46 +109,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     navigate('/');
   };
 
-  const forgotPassword = async (email: string) => {
-    setLoading(true);
-    try {
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      const user = mockUsers.find(u => u.email === email);
-      
-      if (user) {
-        toast({
-          title: "Correo enviado",
-          description: "Se ha enviado un enlace de recuperación a tu correo electrónico",
-        });
-        navigate('/');
-      } else {
-        toast({
-          variant: "destructive",
-          title: "Error",
-          description: "No se encontró ninguna cuenta con ese correo electrónico",
-        });
-      }
-    } catch (error) {
-      console.error('Forgot password error:', error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Ha ocurrido un error durante la recuperación de contraseña",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const value = {
     currentUser,
     isAuthenticated: !!currentUser,
     login,
-    register,
     logout,
-    forgotPassword,
     loading
   };
 

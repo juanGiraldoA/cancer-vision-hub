@@ -10,8 +10,8 @@ import { InfoIcon } from 'lucide-react';
 const Index = () => {
   const { login, isAuthenticated, loading } = useAuth();
 
-  const handleLogin = (data: { email: string; password: string }) => {
-    login(data.email, data.password);
+  const handleLogin = (data: { cc: string; password: string }) => {
+    login(data.cc, data.password);
   };
 
   if (isAuthenticated) {
@@ -34,10 +34,10 @@ const Index = () => {
               <Alert className="bg-transparent border-0 p-0">
                 <InfoIcon className="h-4 w-4 text-blue-500" />
                 <AlertDescription className="text-sm text-blue-700">
-                  <strong>Credenciales de prueba:</strong>
-                  <div className="mt-1 grid gap-1">
-                    <div><strong>Admin:</strong> admin@example.com / admin123</div>
-                    <div><strong>Usuario:</strong> user@example.com / user123</div>
+                  <strong>Ejemplo de credenciales:</strong>
+                  <div className="mt-1">
+                    <div><strong>CC:</strong> 1002655874</div>
+                    <div><strong>Contraseña:</strong> shaolin22</div>
                   </div>
                 </AlertDescription>
               </Alert>

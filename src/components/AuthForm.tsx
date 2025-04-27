@@ -14,6 +14,7 @@ interface AuthFormProps {
   loading: boolean;
 }
 
+// Define schemas for each form type
 const loginSchema = z.object({
   cc: z.string().min(8, 'La cédula debe tener al menos 8 dígitos'),
   password: z.string().min(6, 'La contraseña debe tener al menos 6 caracteres'),
@@ -29,6 +30,14 @@ const forgotPasswordSchema = z.object({
   email: z.string().email('Correo electrónico inválido'),
 });
 
+// Create a type for all possible form values
+type LoginFormValues = z.infer<typeof loginSchema>;
+type RegisterFormValues = z.infer<typeof registerSchema>;
+type ForgotPasswordFormValues = z.infer<typeof forgotPasswordSchema>;
+
+// Union type for all possible form values
+type FormValues = LoginFormValues | RegisterFormValues | ForgotPasswordFormValues;
+
 const AuthForm: React.FC<AuthFormProps> = ({ type, onSubmit, loading }) => {
   // Select the appropriate schema based on form type
   const schema = 
@@ -37,7 +46,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ type, onSubmit, loading }) => {
     forgotPasswordSchema;
   
   // Create form with the selected schema
-  const form = useForm<z.infer<typeof schema>>({
+  const form = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: 
       type === 'login' ? {
@@ -50,10 +59,10 @@ const AuthForm: React.FC<AuthFormProps> = ({ type, onSubmit, loading }) => {
         password: '',
       } : {
         email: '',
-      },
+      } as FormValues,
   });
 
-  const handleSubmit = (values: z.infer<typeof schema>) => {
+  const handleSubmit = (values: FormValues) => {
     onSubmit(values);
   };
 

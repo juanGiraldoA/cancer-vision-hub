@@ -21,7 +21,6 @@ interface AuthContextType {
   login: (cc: string, password: string) => Promise<void>;
   logout: () => void;
   loading: boolean;
-  // Add these methods to fix errors in ForgotPassword and Register pages
   forgotPassword: (email: string) => Promise<void>;
   register: (name: string, email: string, password: string) => Promise<void>;
 }
@@ -38,7 +37,7 @@ export const useAuth = () => {
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -47,7 +46,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (storedUser) {
       setCurrentUser(JSON.parse(storedUser));
     }
-    setLoading(false);
   }, []);
 
   const login = async (cc: string, password: string) => {
@@ -114,7 +112,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     navigate('/');
   };
 
-  // Add forgotPassword method to fix errors in ForgotPassword page
   const forgotPassword = async (email: string) => {
     setLoading(true);
     try {
@@ -138,7 +135,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // Add register method to fix errors in Register page
   const register = async (name: string, email: string, password: string) => {
     setLoading(true);
     try {

@@ -6,5 +6,5 @@ export interface User {
   role: string;
   name?: string;
   status: 'active' | 'inactive';
-  createdAt?: string; // Added this property to match UserTable expectations
+  createdAt?: string;
 }

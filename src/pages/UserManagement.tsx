@@ -12,9 +12,16 @@ const UserManagement = () => {
   const token = localStorage.getItem('accessToken') || '';
   const queryClient = useQueryClient();
 
-  const { data: users = [], isLoading } = useQuery({
+  const { data: users = [], isLoading, isError } = useQuery({
     queryKey: ['users'],
     queryFn: () => userService.getUsers(token),
+    select: (data) => {
+      if (!Array.isArray(data)) {
+        console.error('La respuesta de la API no es un array:', data);
+        return [];
+      }
+      return data;
+    },
   });
 
   const createUserMutation = useMutation({
@@ -94,6 +101,20 @@ const UserManagement = () => {
     );
   }
 
+  // Verificación adicional para asegurar que users sea un array
+  const safeUsers = Array.isArray(users) ? users : [];
+
+  if (isError) {
+    return (
+      <Layout>
+        <div className="text-center py-10">
+          <h2 className="text-2xl font-bold text-gray-900">Error</h2>
+          <p className="mt-2 text-gray-600">No se pudieron cargar los usuarios.</p>
+        </div>
+      </Layout>
+    );
+  }
+
   return (
     <Layout>
       <div className="flex flex-col space-y-6">
@@ -106,7 +127,7 @@ const UserManagement = () => {
 
         <div className="space-y-4">
           <UserTable 
-            users={users}
+            users={safeUsers}
             onUserUpdate={handleUserUpdate}
             onUserDelete={handleUserDelete}
             onUserCreate={handleUserCreate}

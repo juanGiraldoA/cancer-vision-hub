@@ -1,3 +1,4 @@
+
 import { User } from '@/types/user';
 
 const BASE_URL = 'http://127.0.0.1:8000/api';
@@ -28,15 +29,23 @@ export const userService = {
       }
       
       // Mapear los datos del backend a nuestro formato de User
-      return data.map((user: any) => ({
-        id: user.id,
-        name: user.username || '',
-        email: user.email || '',
-        cc: user.cc || '', // Si el backend no envía cc, usamos string vacío
-        role: user.role || 'USER',
-        status: user.status || 'active', // Asumimos activo si no se especifica
-        createdAt: user.created_at || new Date().toISOString(),
-      }));
+      return data.map((user: any) => {
+        // Map the role correctly - convert from role ID or null to string
+        let roleString = 'USER'; // Default role
+        if (user.role === 1) {
+          roleString = 'ADMIN';
+        }
+        
+        return {
+          id: user.id,
+          name: user.username || '',
+          email: user.email || '',
+          cc: user.cc || '', 
+          role: roleString,
+          status: user.is_active ? 'active' : 'inactive', // Map is_active boolean to our status string
+          createdAt: user.created_at || new Date().toISOString(),
+        };
+      });
     } catch (error) {
       console.error('Error fetching users:', error);
       throw error;
@@ -44,37 +53,74 @@ export const userService = {
   },
 
   async createUser(user: Omit<User, 'id'>, token: string): Promise<User> {
+    // Transform our User object to match what the API expects
+    const apiUser = {
+      cc: user.cc,
+      email: user.email,
+      role: user.role === 'ADMIN' ? 1 : null, // Convert role string to ID
+      is_active: user.status === 'active',
+      // Add other fields if needed
+    };
+
     const response = await fetch(`${BASE_URL}/usuarios/`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(user),
+      body: JSON.stringify(apiUser),
     });
 
     if (!response.ok) {
       throw new Error('Failed to create user');
     }
 
-    return response.json();
+    // Convert the API response back to our User format
+    const data = await response.json();
+    return {
+      id: data.id,
+      name: data.username || '',
+      email: data.email,
+      cc: data.cc,
+      role: data.role === 1 ? 'ADMIN' : 'USER',
+      status: data.is_active ? 'active' : 'inactive',
+      createdAt: data.created_at || new Date().toISOString(),
+    };
   },
 
   async updateUser(id: number, user: Partial<User>, token: string): Promise<User> {
+    // Transform our User object to match what the API expects
+    const apiUser: any = {};
+    
+    if (user.cc !== undefined) apiUser.cc = user.cc;
+    if (user.email !== undefined) apiUser.email = user.email;
+    if (user.role !== undefined) apiUser.role = user.role === 'ADMIN' ? 1 : null;
+    if (user.status !== undefined) apiUser.is_active = user.status === 'active';
+    
     const response = await fetch(`${BASE_URL}/usuarios/${id}/`, {
       method: 'PATCH',
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(user),
+      body: JSON.stringify(apiUser),
     });
 
     if (!response.ok) {
       throw new Error('Failed to update user');
     }
 
-    return response.json();
+    // Convert the API response back to our User format
+    const data = await response.json();
+    return {
+      id: data.id,
+      name: data.username || '',
+      email: data.email,
+      cc: data.cc,
+      role: data.role === 1 ? 'ADMIN' : 'USER',
+      status: data.is_active ? 'active' : 'inactive',
+      createdAt: data.created_at || new Date().toISOString(),
+    };
   },
 
   async deleteUser(id: number, token: string): Promise<void> {

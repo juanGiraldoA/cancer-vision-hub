@@ -1,5 +1,5 @@
 
-const BASE_URL = 'http://127.0.0.1:8000/api';
+const BASE_URL = 'http://localhost:8000/api';
 
 export interface Training {
   id: number;
@@ -23,7 +23,8 @@ export const trainingService = {
     });
 
     if (!response.ok) {
-      throw new Error('Failed to upload training file');
+      const errorData = await response.text();
+      throw new Error(`Failed to upload training file: ${errorData}`);
     }
 
     return response.json();
@@ -38,7 +39,8 @@ export const trainingService = {
     });
 
     if (!response.ok) {
-      throw new Error('Failed to fetch training files');
+      const errorData = await response.text();
+      throw new Error(`Failed to fetch training files: ${errorData}`);
     }
 
     return response.json();

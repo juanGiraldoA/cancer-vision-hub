@@ -32,10 +32,11 @@ export interface TrainingHistory {
   id: number;
   date: string;
   fileName: string;
-  accuracy: number;
+  fileUrl: string;
   userId: number;
   userName: string;
-  datasetSize: number;
+  accuracy: number | null;
+  datasetSize: number | null;
 }
 
 interface PredictionHistoryTableProps {
@@ -170,6 +171,16 @@ export const PredictionHistoryTable: React.FC<PredictionHistoryTableProps> = ({ 
 };
 
 export const TrainingHistoryTable: React.FC<TrainingHistoryTableProps> = ({ history }) => {
+  const handleDownload = (fileUrl: string, fileName: string) => {
+    // Create a temporary link to download the file
+    const link = document.createElement('a');
+    link.href = fileUrl;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <div className="rounded-md border">
       <Table>
@@ -179,8 +190,6 @@ export const TrainingHistoryTable: React.FC<TrainingHistoryTableProps> = ({ hist
             <TableHead>Fecha</TableHead>
             <TableHead>Archivo</TableHead>
             <TableHead>Usuario</TableHead>
-            <TableHead>Tamaño Dataset</TableHead>
-            <TableHead>Precisión</TableHead>
             <TableHead className="text-right">Acciones</TableHead>
           </TableRow>
         </TableHeader>
@@ -191,10 +200,13 @@ export const TrainingHistoryTable: React.FC<TrainingHistoryTableProps> = ({ hist
               <TableCell>{new Date(item.date).toLocaleString()}</TableCell>
               <TableCell>{item.fileName}</TableCell>
               <TableCell>{item.userName}</TableCell>
-              <TableCell>{item.datasetSize.toLocaleString()} registros</TableCell>
-              <TableCell>{item.accuracy}%</TableCell>
               <TableCell className="text-right">
-                <Button variant="ghost" size="icon" className="text-blue-600">
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="text-blue-600"
+                  onClick={() => handleDownload(item.fileUrl, item.fileName)}
+                >
                   <Download size={16} />
                 </Button>
               </TableCell>
@@ -203,7 +215,7 @@ export const TrainingHistoryTable: React.FC<TrainingHistoryTableProps> = ({ hist
 
           {history.length === 0 && (
             <TableRow>
-              <TableCell colSpan={7} className="text-center py-6 text-muted-foreground">
+              <TableCell colSpan={5} className="text-center py-6 text-muted-foreground">
                 No hay registros de entrenamientos
               </TableCell>
             </TableRow>

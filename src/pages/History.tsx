@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PredictionHistoryTable, TrainingHistoryTable } from '@/components/HistoryTable';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { FileSpreadsheet, BarChart } from 'lucide-react';
+import { FileSpreadsheet } from 'lucide-react';
 import TrainingUpload from '@/components/TrainingUpload';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { toast } from '@/components/ui/use-toast';
@@ -31,7 +31,7 @@ const History = () => {
   });
 
   // Fetch training files from backend
-  const { data: trainings = [] } = useQuery({
+  const { data: trainings = [], isLoading: trainingsLoading, error: trainingsError } = useQuery({
     queryKey: ['trainings'],
     queryFn: () => trainingService.getTrainingFiles(token),
   });
@@ -42,6 +42,7 @@ const History = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['trainings'] });
       setTrainingSuccess(true);
+      setIsTraining(false);
       toast({
         title: "Archivo subido correctamente",
         description: "El archivo de entrenamiento ha sido subido exitosamente",
@@ -87,7 +88,7 @@ const History = () => {
   const transformedPredictions = predictions.map(prediction => ({
     id: prediction.id,
     date: prediction.fecha,
-    imageUrl: `http://127.0.0.1:8000${prediction.imagen}`, // Assuming imagen contains the image ID, you might need to fetch the actual URL
+    imageUrl: `http://localhost:8000${prediction.imagen}`,
     result: {
       type: `${prediction.resultado.diagnostico} - ${prediction.resultado.region_afectada}`,
       probability: Math.round(prediction.confidence_score * 100),
@@ -97,15 +98,17 @@ const History = () => {
     userName: prediction.usuario_email,
   }));
 
-  // Transform trainings to match the expected format
+  // Transform trainings to match the expected format - using real data from API
   const transformedTrainings = trainings.map(training => ({
     id: training.id,
     date: training.fecha,
-    fileName: training.archivo.split('/').pop() || 'Unknown file',
-    accuracy: 90 + Math.floor(Math.random() * 10), // Mock accuracy for now
+    fileName: training.archivo.split('/').pop() || 'Archivo desconocido',
+    fileUrl: training.archivo,
     userId: training.usuario,
     userName: training.usuario_email,
-    datasetSize: Math.floor(Math.random() * 5000) + 1000, // Mock dataset size
+    // These fields are not provided by the API, so we'll hide them or mock them
+    accuracy: null, // We'll handle this in the table component
+    datasetSize: null, // We'll handle this in the table component
   }));
 
   return (
@@ -151,7 +154,15 @@ const History = () => {
                 <CardDescription>Registro de archivos de entrenamiento subidos</CardDescription>
               </CardHeader>
               <CardContent className="pt-6">
-                <TrainingHistoryTable history={transformedTrainings} />
+                {trainingsLoading ? (
+                  <div className="text-center py-6">Cargando entrenamientos...</div>
+                ) : trainingsError ? (
+                  <div className="text-center py-6 text-red-500">
+                    Error al cargar entrenamientos: {trainingsError.message}
+                  </div>
+                ) : (
+                  <TrainingHistoryTable history={transformedTrainings} />
+                )}
               </CardContent>
             </Card>
           </TabsContent>

@@ -26,22 +26,25 @@ const TrainingUpload: React.FC<TrainingUploadProps> = ({ onFileSelect }) => {
   };
 
   const processFile = (file: File) => {
-    // File type validation
-    if (!file.name.endsWith('.xlsx') && !file.name.endsWith('.csv')) {
+    // File type validation - now includes ZIP files
+    const validExtensions = ['.xlsx', '.csv', '.zip'];
+    const isValidType = validExtensions.some(ext => file.name.toLowerCase().endsWith(ext));
+    
+    if (!isValidType) {
       toast({
         variant: "destructive",
         title: "Formato no válido",
-        description: "Por favor selecciona un archivo Excel (.xlsx) o CSV (.csv)",
+        description: "Por favor selecciona un archivo Excel (.xlsx), CSV (.csv) o ZIP (.zip)",
       });
       return;
     }
 
-    // Size validation (max 10MB)
-    if (file.size > 10 * 1024 * 1024) {
+    // Size validation (max 50MB for training files)
+    if (file.size > 50 * 1024 * 1024) {
       toast({
         variant: "destructive",
         title: "Archivo demasiado grande",
-        description: "El tamaño máximo permitido es de 10MB",
+        description: "El tamaño máximo permitido es de 50MB",
       });
       return;
     }
@@ -97,7 +100,7 @@ const TrainingUpload: React.FC<TrainingUploadProps> = ({ onFileSelect }) => {
             <input
               ref={inputRef}
               type="file"
-              accept=".xlsx,.csv"
+              accept=".xlsx,.csv,.zip"
               onChange={handleChange}
               className="hidden"
             />
@@ -110,7 +113,7 @@ const TrainingUpload: React.FC<TrainingUploadProps> = ({ onFileSelect }) => {
                 Arrastra y suelta un archivo o haz clic para seleccionar
               </p>
               <p className="text-xs text-muted-foreground mb-6">
-                Formatos soportados: Excel (.xlsx), CSV (.csv). Tamaño máximo: 10MB
+                Formatos soportados: Excel (.xlsx), CSV (.csv), ZIP (.zip). Tamaño máximo: 50MB
               </p>
               <Button onClick={handleButtonClick}>
                 <Upload size={16} className="mr-2" />

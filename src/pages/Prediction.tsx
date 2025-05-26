@@ -8,19 +8,24 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 import { toast } from '@/components/ui/use-toast';
 import { AlertCircle, RotateCcw, Microscope } from 'lucide-react';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+import { medicalImageService, MedicalImage } from '@/services/medicalImageService';
+import { predictionService } from '@/services/predictionService';
 
 const Prediction = () => {
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [uploadedImage, setUploadedImage] = useState<MedicalImage | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [prediction, setPrediction] = useState<CancerPrediction | null>(null);
   const [originalImageUrl, setOriginalImageUrl] = useState<string | null>(null);
-  const [processedImageUrl, setProcessedImageUrl] = useState<string | null>(null);
+
+  const token = localStorage.getItem('accessToken') || '';
 
   const handleImageSelect = (file: File) => {
     setSelectedImage(file);
     setPrediction(null);
+    setUploadedImage(null);
     
-    // Create URL for original image
+    // Create URL for original image preview
     const imageUrl = URL.createObjectURL(file);
     setOriginalImageUrl(imageUrl);
   };
@@ -38,23 +43,50 @@ const Prediction = () => {
     setIsAnalyzing(true);
 
     try {
-      // Simulate API call with a delay
+      // First upload the image
+      toast({
+        title: "Subiendo imagen",
+        description: "Subiendo imagen al servidor...",
+      });
+
+      const uploadedImageData = await medicalImageService.uploadMedicalImage(selectedImage, token);
+      setUploadedImage(uploadedImageData);
+
+      // Simulate AI analysis and create prediction
+      toast({
+        title: "Analizando imagen",
+        description: "Procesando imagen con IA...",
+      });
+
+      // Simulate analysis delay
       await new Promise(resolve => setTimeout(resolve, 3000));
 
-      // Simulate processed image (in a real app, this would come from the backend)
-      setProcessedImageUrl(originalImageUrl);
-
-      // Simulate prediction result (in a real app, this would come from the backend)
-      const mockTypes = [
-        { type: 'Melanoma', probability: 85, isMalignant: true },
-        { type: 'Carcinoma Basocelular', probability: 72, isMalignant: true },
-        { type: 'Carcinoma Epidermoide', probability: 64, isMalignant: true },
-        { type: 'Nevus Melanocítico', probability: 91, isMalignant: false },
-        { type: 'Queratosis Seborreica', probability: 88, isMalignant: false },
+      // Create mock prediction data
+      const mockDiagnostics = [
+        { diagnostico: 'maligno', region_afectada: 'lóbulo superior derecho' },
+        { diagnostico: 'benigno', region_afectada: 'sin región específica' },
+        { diagnostico: 'maligno', region_afectada: 'lóbulo inferior izquierdo' },
       ];
-      
-      const randomPrediction = mockTypes[Math.floor(Math.random() * mockTypes.length)];
-      setPrediction(randomPrediction);
+
+      const randomDiagnostic = mockDiagnostics[Math.floor(Math.random() * mockDiagnostics.length)];
+      const confidenceScore = Math.random() * 0.3 + 0.7; // Between 0.7 and 1.0
+
+      const predictionData = {
+        resultado: randomDiagnostic,
+        confidence_score: confidenceScore,
+        imagen: uploadedImageData.id,
+      };
+
+      const predictionResult = await predictionService.createPrediction(predictionData, token);
+
+      // Convert to our CancerPrediction format for the UI
+      const cancerPrediction: CancerPrediction = {
+        type: `${predictionResult.resultado.diagnostico} - ${predictionResult.resultado.region_afectada}`,
+        probability: Math.round(predictionResult.confidence_score * 100),
+        isMalignant: predictionResult.resultado.diagnostico === 'maligno',
+      };
+
+      setPrediction(cancerPrediction);
 
       toast({
         title: "Análisis completado",
@@ -75,8 +107,8 @@ const Prediction = () => {
   const handleReset = () => {
     setSelectedImage(null);
     setPrediction(null);
+    setUploadedImage(null);
     setOriginalImageUrl(null);
-    setProcessedImageUrl(null);
   };
 
   return (
@@ -139,11 +171,11 @@ const Prediction = () => {
               </Button>
             </div>
             
-            {prediction && originalImageUrl && processedImageUrl && (
+            {prediction && originalImageUrl && uploadedImage && (
               <PredictionResult 
                 prediction={prediction} 
                 originalImage={originalImageUrl}
-                processedImage={processedImageUrl}
+                processedImage={uploadedImage.imagen}
               />
             )}
           </div>

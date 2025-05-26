@@ -26,32 +26,43 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ onImageSelect }) => {
   };
 
   const processImage = (file: File) => {
-    // File type validation
-    if (!file.type.match('image.*')) {
+    // File type validation - now includes DICOM files
+    const validTypes = ['image/jpeg', 'image/png', 'application/dicom'];
+    const validExtensions = ['.jpg', '.jpeg', '.png', '.dcm'];
+    
+    const isValidType = validTypes.includes(file.type) || 
+                       validExtensions.some(ext => file.name.toLowerCase().endsWith(ext));
+    
+    if (!isValidType) {
       toast({
         variant: "destructive",
         title: "Formato no válido",
-        description: "Por favor selecciona una imagen en formato JPEG o PNG",
+        description: "Por favor selecciona una imagen en formato JPEG, PNG o DICOM (.dcm)",
       });
       return;
     }
 
-    // Size validation (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
+    // Size validation (max 10MB for medical images)
+    if (file.size > 10 * 1024 * 1024) {
       toast({
         variant: "destructive",
         title: "Imagen demasiado grande",
-        description: "El tamaño máximo permitido es de 5MB",
+        description: "El tamaño máximo permitido es de 10MB",
       });
       return;
     }
 
-    // Create preview
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      setPreviewImage(e.target?.result as string);
-    };
-    reader.readAsDataURL(file);
+    // Create preview only for regular image formats
+    if (file.type.startsWith('image/')) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setPreviewImage(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    } else {
+      // For DICOM files, show a placeholder
+      setPreviewImage('dicom-placeholder');
+    }
 
     // Pass file to parent component
     onImageSelect(file);
@@ -104,7 +115,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ onImageSelect }) => {
             <input
               ref={inputRef}
               type="file"
-              accept="image/jpeg, image/png"
+              accept="image/jpeg, image/png, .dcm"
               onChange={handleChange}
               className="hidden"
             />
@@ -112,12 +123,12 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ onImageSelect }) => {
               <div className="p-3 mb-4 rounded-full bg-secondary">
                 <ImageIcon className="h-6 w-6 text-primary" />
               </div>
-              <h3 className="text-lg font-semibold mb-2">Subir Imagen</h3>
+              <h3 className="text-lg font-semibold mb-2">Subir Imagen Médica</h3>
               <p className="text-sm text-muted-foreground mb-4">
                 Arrastra y suelta una imagen o haz clic para seleccionar
               </p>
               <p className="text-xs text-muted-foreground mb-6">
-                Formatos soportados: JPEG, PNG. Tamaño máximo: 5MB
+                Formatos soportados: JPEG, PNG, DICOM (.dcm). Tamaño máximo: 10MB
               </p>
               <Button onClick={handleButtonClick}>
                 <Upload size={16} className="mr-2" />
@@ -127,12 +138,22 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ onImageSelect }) => {
           </div>
         ) : (
           <div className="relative">
-            <img 
-              src={previewImage} 
-              alt="Preview" 
-              className="w-full h-auto rounded-lg" 
-              style={{ maxHeight: '400px', objectFit: 'contain' }}
-            />
+            {previewImage === 'dicom-placeholder' ? (
+              <div className="w-full h-64 bg-gray-100 rounded-lg flex items-center justify-center">
+                <div className="text-center">
+                  <ImageIcon className="h-12 w-12 text-gray-400 mx-auto mb-2" />
+                  <p className="text-sm text-gray-600">Archivo DICOM seleccionado</p>
+                  <p className="text-xs text-gray-500">Vista previa no disponible</p>
+                </div>
+              </div>
+            ) : (
+              <img 
+                src={previewImage} 
+                alt="Preview" 
+                className="w-full h-auto rounded-lg" 
+                style={{ maxHeight: '400px', objectFit: 'contain' }}
+              />
+            )}
             <Button 
               size="icon" 
               variant="destructive"

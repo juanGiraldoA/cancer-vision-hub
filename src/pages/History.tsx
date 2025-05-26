@@ -1,5 +1,6 @@
 
 import React, { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Layout from '@/components/Layout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PredictionHistoryTable, TrainingHistoryTable } from '@/components/HistoryTable';
@@ -11,77 +12,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { toast } from '@/components/ui/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-
-// Mock data for prediction history
-const mockPredictions = [
-  {
-    id: 1,
-    date: '2024-04-05T10:30:00',
-    imageUrl: 'https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?q=80&w=500',
-    result: {
-      type: 'Melanoma',
-      probability: 85,
-      isMalignant: true,
-    },
-    userId: 1,
-    userName: 'Admin User',
-  },
-  {
-    id: 2,
-    date: '2024-04-04T14:22:00',
-    imageUrl: 'https://images.unsplash.com/photo-1577398214900-ca0a9dae651d?q=80&w=500',
-    result: {
-      type: 'Nevus Melanocítico',
-      probability: 92,
-      isMalignant: false,
-    },
-    userId: 2,
-    userName: 'Test User',
-  },
-  {
-    id: 3,
-    date: '2024-04-03T09:15:00',
-    imageUrl: 'https://images.unsplash.com/photo-1579684288361-5c1a2957cc88?q=80&w=500',
-    result: {
-      type: 'Carcinoma Basocelular',
-      probability: 78,
-      isMalignant: true,
-    },
-    userId: 1,
-    userName: 'Admin User',
-  },
-];
-
-// Mock data for training history
-const mockTrainings = [
-  {
-    id: 1,
-    date: '2024-04-02T08:00:00',
-    fileName: 'dataset_v3.xlsx',
-    accuracy: 94,
-    userId: 1,
-    userName: 'Admin User',
-    datasetSize: 5230,
-  },
-  {
-    id: 2,
-    date: '2024-03-15T11:45:00',
-    fileName: 'dataset_v2.xlsx',
-    accuracy: 91,
-    userId: 1,
-    userName: 'Admin User',
-    datasetSize: 4850,
-  },
-  {
-    id: 3,
-    date: '2024-02-28T16:30:00',
-    fileName: 'dataset_v1.xlsx',
-    accuracy: 88,
-    userId: 1,
-    userName: 'Admin User',
-    datasetSize: 3920,
-  },
-];
+import { trainingService } from '@/services/trainingService';
+import { predictionService } from '@/services/predictionService';
 
 const History = () => {
   const [isTrainingDialogOpen, setIsTrainingDialogOpen] = useState(false);
@@ -89,7 +21,42 @@ const History = () => {
   const [isTraining, setIsTraining] = useState(false);
   const [trainingSuccess, setTrainingSuccess] = useState(false);
   const { currentUser } = useAuth();
+  const queryClient = useQueryClient();
+  const token = localStorage.getItem('accessToken') || '';
   
+  // Fetch predictions from backend
+  const { data: predictions = [] } = useQuery({
+    queryKey: ['predictions'],
+    queryFn: () => predictionService.getPredictions(token),
+  });
+
+  // Fetch training files from backend
+  const { data: trainings = [] } = useQuery({
+    queryKey: ['trainings'],
+    queryFn: () => trainingService.getTrainingFiles(token),
+  });
+
+  // Upload training file mutation
+  const uploadTrainingMutation = useMutation({
+    mutationFn: (file: File) => trainingService.uploadTrainingFile(file, token),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['trainings'] });
+      setTrainingSuccess(true);
+      toast({
+        title: "Archivo subido correctamente",
+        description: "El archivo de entrenamiento ha sido subido exitosamente",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        variant: "destructive",
+        title: "Error al subir archivo",
+        description: error.message || "Ha ocurrido un error al subir el archivo",
+      });
+      setIsTraining(false);
+    },
+  });
+
   const handleFileSelect = (file: File) => {
     setSelectedFile(file);
     setTrainingSuccess(false);
@@ -106,34 +73,40 @@ const History = () => {
     }
 
     setIsTraining(true);
-
-    try {
-      // Simulate API call with a delay
-      await new Promise(resolve => setTimeout(resolve, 5000));
-
-      setTrainingSuccess(true);
-      
-      toast({
-        title: "Entrenamiento completado",
-        description: "El modelo ha sido reentrenado exitosamente",
-      });
-    } catch (error) {
-      console.error('Error during training:', error);
-      toast({
-        variant: "destructive",
-        title: "Error en el entrenamiento",
-        description: "Ha ocurrido un error al entrenar el modelo",
-      });
-    } finally {
-      setIsTraining(false);
-    }
+    uploadTrainingMutation.mutate(selectedFile);
   };
 
   const handleCloseDialog = () => {
     setIsTrainingDialogOpen(false);
     setSelectedFile(null);
     setTrainingSuccess(false);
+    setIsTraining(false);
   };
+
+  // Transform predictions to match the expected format
+  const transformedPredictions = predictions.map(prediction => ({
+    id: prediction.id,
+    date: prediction.fecha,
+    imageUrl: `http://127.0.0.1:8000${prediction.imagen}`, // Assuming imagen contains the image ID, you might need to fetch the actual URL
+    result: {
+      type: `${prediction.resultado.diagnostico} - ${prediction.resultado.region_afectada}`,
+      probability: Math.round(prediction.confidence_score * 100),
+      isMalignant: prediction.resultado.diagnostico === 'maligno',
+    },
+    userId: prediction.usuario,
+    userName: prediction.usuario_email,
+  }));
+
+  // Transform trainings to match the expected format
+  const transformedTrainings = trainings.map(training => ({
+    id: training.id,
+    date: training.fecha,
+    fileName: training.archivo.split('/').pop() || 'Unknown file',
+    accuracy: 90 + Math.floor(Math.random() * 10), // Mock accuracy for now
+    userId: training.usuario,
+    userName: training.usuario_email,
+    datasetSize: Math.floor(Math.random() * 5000) + 1000, // Mock dataset size
+  }));
 
   return (
     <Layout>
@@ -145,10 +118,10 @@ const History = () => {
               Revisa el historial de predicciones y entrenamientos
             </p>
           </div>
-          {currentUser?.role === 'admin' && (
+          {currentUser?.role === 'ADMIN' && (
             <Button onClick={() => setIsTrainingDialogOpen(true)}>
               <FileSpreadsheet size={16} className="mr-2" />
-              Reentrenar modelo
+              Subir archivo de entrenamiento
             </Button>
           )}
         </div>
@@ -166,7 +139,7 @@ const History = () => {
                 <CardDescription>Registro de predicciones realizadas</CardDescription>
               </CardHeader>
               <CardContent className="pt-6">
-                <PredictionHistoryTable history={mockPredictions} />
+                <PredictionHistoryTable history={transformedPredictions} />
               </CardContent>
             </Card>
           </TabsContent>
@@ -175,10 +148,10 @@ const History = () => {
             <Card className="border-0 shadow-md">
               <CardHeader className="bg-secondary/50">
                 <CardTitle>Historial de entrenamientos</CardTitle>
-                <CardDescription>Registro de entrenamientos del modelo</CardDescription>
+                <CardDescription>Registro de archivos de entrenamiento subidos</CardDescription>
               </CardHeader>
               <CardContent className="pt-6">
-                <TrainingHistoryTable history={mockTrainings} />
+                <TrainingHistoryTable history={transformedTrainings} />
               </CardContent>
             </Card>
           </TabsContent>
@@ -189,9 +162,9 @@ const History = () => {
       <Dialog open={isTrainingDialogOpen} onOpenChange={setIsTrainingDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Reentrenar Modelo</DialogTitle>
+            <DialogTitle>Subir archivo de entrenamiento</DialogTitle>
             <DialogDescription>
-              Sube un archivo Excel o CSV con datos etiquetados para reentrenar el modelo de predicción
+              Sube un archivo CSV, Excel o ZIP con datos etiquetados para entrenar el modelo
             </DialogDescription>
           </DialogHeader>
           
@@ -203,17 +176,10 @@ const History = () => {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
                   </svg>
                 </div>
-                <h3 className="text-lg font-medium text-gray-900">Modelo reentrenado correctamente</h3>
+                <h3 className="text-lg font-medium text-gray-900">Archivo subido correctamente</h3>
                 <p className="text-sm text-gray-500">
-                  El modelo ha sido actualizado con los nuevos datos. Las predicciones ahora utilizarán este modelo mejorado.
+                  El archivo ha sido subido exitosamente y está disponible para entrenamiento del modelo.
                 </p>
-                <div className="mt-4 flex items-center justify-center gap-4">
-                  <BarChart size={20} className="text-blue-500" />
-                  <div className="text-left">
-                    <p className="text-sm font-medium">Precisión del nuevo modelo: 96%</p>
-                    <p className="text-xs text-gray-500">Mejora: +2% respecto al modelo anterior</p>
-                  </div>
-                </div>
               </div>
             </div>
           ) : (
@@ -224,8 +190,7 @@ const History = () => {
                 <Alert variant="default" className="bg-blue-50 text-blue-800 border-blue-200">
                   <AlertTitle>Información importante</AlertTitle>
                   <AlertDescription>
-                    El reentrenamiento puede tomar varios minutos dependiendo del tamaño del archivo. 
-                    No cierre esta ventana durante el proceso.
+                    El archivo será subido al servidor. Asegúrate de que contenga datos correctamente etiquetados.
                   </AlertDescription>
                 </Alert>
               )}
@@ -244,10 +209,10 @@ const History = () => {
                 {isTraining ? (
                   <>
                     <div className="animate-spin mr-2 h-4 w-4 border-2 border-white border-t-transparent rounded-full"></div>
-                    Entrenando...
+                    Subiendo...
                   </>
                 ) : (
-                  'Iniciar entrenamiento'
+                  'Subir archivo'
                 )}
               </Button>
             )}

@@ -43,7 +43,7 @@ const Prediction = () => {
     setIsAnalyzing(true);
 
     try {
-      // First upload the image
+      // Upload the image to your backend
       toast({
         title: "Subiendo imagen",
         description: "Subiendo imagen al servidor...",
@@ -52,16 +52,22 @@ const Prediction = () => {
       const uploadedImageData = await medicalImageService.uploadMedicalImage(selectedImage, token);
       setUploadedImage(uploadedImageData);
 
-      // Simulate AI analysis and create prediction
+      toast({
+        title: "Imagen subida exitosamente",
+        description: `Imagen subida con ID: ${uploadedImageData.id}`,
+      });
+
+      // For now, we'll simulate the AI analysis since you might not have the AI endpoint ready
+      // You can replace this with a real AI analysis call when available
       toast({
         title: "Analizando imagen",
         description: "Procesando imagen con IA...",
       });
 
       // Simulate analysis delay
-      await new Promise(resolve => setTimeout(resolve, 3000));
+      await new Promise(resolve => setTimeout(resolve, 2000));
 
-      // Create mock prediction data
+      // Create mock prediction data for now - replace with real AI analysis
       const mockDiagnostics = [
         { diagnostico: 'maligno', region_afectada: 'lóbulo superior derecho' },
         { diagnostico: 'benigno', region_afectada: 'sin región específica' },

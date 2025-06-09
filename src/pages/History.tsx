@@ -88,11 +88,12 @@ const History = () => {
   const transformedPredictions = predictions.map(prediction => ({
     id: prediction.id,
     date: prediction.fecha,
-    imageUrl: `http://localhost:8000${prediction.imagen}`,
+    imageUrl: prediction.imagen_url,
     result: {
-      type: `${prediction.resultado.diagnostico} - ${prediction.resultado.region_afectada}`,
+      type: prediction.resultado.diagnostico,
       probability: Math.round(prediction.confidence_score * 100),
-      isMalignant: prediction.resultado.diagnostico === 'maligno',
+      isMalignant: prediction.resultado.diagnostico.toLowerCase().includes('cáncer') || 
+                   prediction.resultado.diagnostico.toLowerCase().includes('maligno'),
     },
     userId: prediction.usuario,
     userName: prediction.usuario_email,

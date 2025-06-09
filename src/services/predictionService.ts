@@ -21,7 +21,7 @@ export interface Prediction {
 }
 
 export interface CreatePredictionData {
-  imagen_id: number;
+  imagen: number;
 }
 
 export const predictionService = {

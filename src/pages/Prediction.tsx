@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import Layout from '@/components/Layout';
@@ -108,7 +107,7 @@ const PredictionPage = () => {
       });
 
       const predictionResult = await predictionService.createPrediction(
-        { imagen_id: selectedImageForPrediction.id },
+        { imagen: selectedImageForPrediction.id },
         token
       );
 

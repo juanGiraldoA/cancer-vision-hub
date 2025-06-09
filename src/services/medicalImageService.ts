@@ -45,4 +45,19 @@ export const medicalImageService = {
 
     return response.json();
   },
+
+  async deleteMedicalImage(id: number, token: string): Promise<void> {
+    const response = await fetch(`${BASE_URL}/imagenes/${id}/`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.text();
+      throw new Error(`Failed to delete medical image: ${errorData}`);
+    }
+  },
 };

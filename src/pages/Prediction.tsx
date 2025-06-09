@@ -1,37 +1,96 @@
 
 import React, { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import Layout from '@/components/Layout';
 import ImageUploader from '@/components/ImageUploader';
 import PredictionResult, { CancerPrediction } from '@/components/PredictionResult';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { toast } from '@/components/ui/use-toast';
-import { AlertCircle, RotateCcw, Microscope } from 'lucide-react';
+import { AlertCircle, RotateCcw, Microscope, Upload, Trash2 } from 'lucide-react';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { medicalImageService, MedicalImage } from '@/services/medicalImageService';
-import { predictionService } from '@/services/predictionService';
+import { predictionService, Prediction } from '@/services/predictionService';
 
-const Prediction = () => {
+const PredictionPage = () => {
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
-  const [uploadedImage, setUploadedImage] = useState<MedicalImage | null>(null);
+  const [selectedImageForPrediction, setSelectedImageForPrediction] = useState<MedicalImage | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [prediction, setPrediction] = useState<CancerPrediction | null>(null);
-  const [originalImageUrl, setOriginalImageUrl] = useState<string | null>(null);
+  const [prediction, setPrediction] = useState<Prediction | null>(null);
 
   const token = localStorage.getItem('accessToken') || '';
+
+  // Fetch uploaded images
+  const { data: uploadedImages = [], isLoading: imagesLoading, refetch: refetchImages } = useQuery({
+    queryKey: ['medical-images'],
+    queryFn: () => medicalImageService.getMedicalImages(token),
+  });
 
   const handleImageSelect = (file: File) => {
     setSelectedImage(file);
     setPrediction(null);
-    setUploadedImage(null);
-    
-    // Create URL for original image preview
-    const imageUrl = URL.createObjectURL(file);
-    setOriginalImageUrl(imageUrl);
+  };
+
+  const handleUploadImage = async () => {
+    if (!selectedImage) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Por favor selecciona una imagen para subir",
+      });
+      return;
+    }
+
+    setIsUploading(true);
+
+    try {
+      toast({
+        title: "Subiendo imagen",
+        description: "Subiendo imagen al servidor...",
+      });
+
+      await medicalImageService.uploadMedicalImage(selectedImage, token);
+      
+      toast({
+        title: "Imagen subida exitosamente",
+        description: "La imagen ha sido subida correctamente",
+      });
+
+      setSelectedImage(null);
+      refetchImages();
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      toast({
+        variant: "destructive",
+        title: "Error al subir imagen",
+        description: "Ha ocurrido un error al subir la imagen",
+      });
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleDeleteImage = async (imageId: number) => {
+    try {
+      await medicalImageService.deleteMedicalImage(imageId, token);
+      toast({
+        title: "Imagen eliminada",
+        description: "La imagen ha sido eliminada correctamente",
+      });
+      refetchImages();
+    } catch (error) {
+      console.error('Error deleting image:', error);
+      toast({
+        variant: "destructive",
+        title: "Error al eliminar imagen",
+        description: "Ha ocurrido un error al eliminar la imagen",
+      });
+    }
   };
 
   const handleAnalyze = async () => {
-    if (!selectedImage) {
+    if (!selectedImageForPrediction) {
       toast({
         variant: "destructive",
         title: "Error",
@@ -43,56 +102,17 @@ const Prediction = () => {
     setIsAnalyzing(true);
 
     try {
-      // Upload the image to your backend
-      toast({
-        title: "Subiendo imagen",
-        description: "Subiendo imagen al servidor...",
-      });
-
-      const uploadedImageData = await medicalImageService.uploadMedicalImage(selectedImage, token);
-      setUploadedImage(uploadedImageData);
-
-      toast({
-        title: "Imagen subida exitosamente",
-        description: `Imagen subida con ID: ${uploadedImageData.id}`,
-      });
-
-      // For now, we'll simulate the AI analysis since you might not have the AI endpoint ready
-      // You can replace this with a real AI analysis call when available
       toast({
         title: "Analizando imagen",
         description: "Procesando imagen con IA...",
       });
 
-      // Simulate analysis delay
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      const predictionResult = await predictionService.createPrediction(
+        { imagen_id: selectedImageForPrediction.id },
+        token
+      );
 
-      // Create mock prediction data for now - replace with real AI analysis
-      const mockDiagnostics = [
-        { diagnostico: 'maligno', region_afectada: 'lóbulo superior derecho' },
-        { diagnostico: 'benigno', region_afectada: 'sin región específica' },
-        { diagnostico: 'maligno', region_afectada: 'lóbulo inferior izquierdo' },
-      ];
-
-      const randomDiagnostic = mockDiagnostics[Math.floor(Math.random() * mockDiagnostics.length)];
-      const confidenceScore = Math.random() * 0.3 + 0.7; // Between 0.7 and 1.0
-
-      const predictionData = {
-        resultado: randomDiagnostic,
-        confidence_score: confidenceScore,
-        imagen: uploadedImageData.id,
-      };
-
-      const predictionResult = await predictionService.createPrediction(predictionData, token);
-
-      // Convert to our CancerPrediction format for the UI
-      const cancerPrediction: CancerPrediction = {
-        type: `${predictionResult.resultado.diagnostico} - ${predictionResult.resultado.region_afectada}`,
-        probability: Math.round(predictionResult.confidence_score * 100),
-        isMalignant: predictionResult.resultado.diagnostico === 'maligno',
-      };
-
-      setPrediction(cancerPrediction);
+      setPrediction(predictionResult);
 
       toast({
         title: "Análisis completado",
@@ -112,9 +132,23 @@ const Prediction = () => {
 
   const handleReset = () => {
     setSelectedImage(null);
+    setSelectedImageForPrediction(null);
     setPrediction(null);
-    setUploadedImage(null);
-    setOriginalImageUrl(null);
+  };
+
+  // Convert backend prediction to UI format
+  const getCancerPrediction = (prediction: Prediction): CancerPrediction => {
+    return {
+      type: prediction.resultado.diagnostico,
+      probability: Math.round(prediction.confidence_score * 100),
+      isMalignant: prediction.resultado.diagnostico.toLowerCase().includes('cáncer') || 
+                   prediction.resultado.diagnostico.toLowerCase().includes('maligno'),
+      metrics: {
+        precision: prediction.resultado.precision,
+        recall: prediction.resultado.recall,
+        accuracy: prediction.resultado.accuracy,
+      }
+    };
   };
 
   return (
@@ -123,39 +157,121 @@ const Prediction = () => {
         <div className="flex flex-col space-y-2">
           <h1 className="text-3xl font-bold tracking-tight">Predicción de Cáncer</h1>
           <p className="text-muted-foreground">
-            Sube una imagen para analizar y detectar posibles tipos de cáncer
+            Sube imágenes médicas y realiza análisis de predicción de cáncer
           </p>
         </div>
 
         {!prediction ? (
-          <div className="grid grid-cols-1 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Upload Section */}
             <Card className="overflow-hidden border-0 shadow-md">
               <CardHeader className="bg-secondary/50">
-                <CardTitle>Análisis de imagen</CardTitle>
-                <CardDescription>Carga una imagen para realizar la predicción</CardDescription>
+                <CardTitle>Subir Nueva Imagen</CardTitle>
+                <CardDescription>Carga una imagen médica al sistema</CardDescription>
               </CardHeader>
-              <CardContent className="p-6 pt-6">
+              <CardContent className="p-6">
+                <ImageUploader onImageSelect={handleImageSelect} />
+                
+                <div className="flex justify-center mt-6">
+                  <Button
+                    onClick={handleUploadImage}
+                    disabled={!selectedImage || isUploading}
+                    size="lg"
+                  >
+                    {isUploading ? (
+                      <>
+                        <div className="animate-spin mr-2 h-4 w-4 border-2 border-white border-t-transparent rounded-full"></div>
+                        Subiendo...
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="mr-2" />
+                        Subir imagen
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Analysis Section */}
+            <Card className="overflow-hidden border-0 shadow-md">
+              <CardHeader className="bg-secondary/50">
+                <CardTitle>Análizar Imagen</CardTitle>
+                <CardDescription>Selecciona una imagen para realizar la predicción</CardDescription>
+              </CardHeader>
+              <CardContent className="p-6">
                 <Alert variant="default" className="mb-6 bg-blue-50 text-blue-800 border-blue-200">
                   <AlertCircle className="h-4 w-4 text-blue-500" />
                   <AlertTitle>Información importante</AlertTitle>
                   <AlertDescription>
                     Esta herramienta está diseñada para ayudar en la detección temprana, 
-                    pero no reemplaza el diagnóstico profesional. Siempre consulta con un médico especialista.
+                    pero no reemplaza el diagnóstico profesional.
                   </AlertDescription>
                 </Alert>
-                
-                <ImageUploader onImageSelect={handleImageSelect} />
+
+                <div className="space-y-4">
+                  <h4 className="font-semibold">Imágenes disponibles:</h4>
+                  {imagesLoading ? (
+                    <div className="flex justify-center">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                    </div>
+                  ) : uploadedImages.length === 0 ? (
+                    <p className="text-muted-foreground text-sm">No hay imágenes disponibles. Sube una imagen primero.</p>
+                  ) : (
+                    <div className="grid grid-cols-1 gap-3 max-h-64 overflow-y-auto">
+                      {uploadedImages.map((image) => (
+                        <div
+                          key={image.id}
+                          className={`border rounded-lg p-3 cursor-pointer transition-colors ${
+                            selectedImageForPrediction?.id === image.id
+                              ? 'border-primary bg-primary/5'
+                              : 'border-gray-200 hover:border-primary/50'
+                          }`}
+                          onClick={() => setSelectedImageForPrediction(image)}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-3">
+                              <img
+                                src={image.imagen}
+                                alt={`Imagen ${image.id}`}
+                                className="w-12 h-12 object-cover rounded"
+                              />
+                              <div>
+                                <p className="text-sm font-medium">Imagen #{image.id}</p>
+                                <p className="text-xs text-muted-foreground">
+                                  {new Date(image.fecha_subida).toLocaleDateString()}
+                                </p>
+                              </div>
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteImage(image.id);
+                              }}
+                              className="text-red-600 hover:text-red-700"
+                            >
+                              <Trash2 size={16} />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
                 
                 <div className="flex justify-center mt-6">
                   <Button
                     onClick={handleAnalyze}
-                    disabled={!selectedImage || isAnalyzing}
+                    disabled={!selectedImageForPrediction || isAnalyzing}
                     size="lg"
                   >
                     {isAnalyzing ? (
                       <>
                         <div className="animate-spin mr-2 h-4 w-4 border-2 border-white border-t-transparent rounded-full"></div>
-                        Analizando imagen...
+                        Analizando...
                       </>
                     ) : (
                       <>
@@ -177,13 +293,11 @@ const Prediction = () => {
               </Button>
             </div>
             
-            {prediction && originalImageUrl && uploadedImage && (
-              <PredictionResult 
-                prediction={prediction} 
-                originalImage={originalImageUrl}
-                processedImage={uploadedImage.imagen}
-              />
-            )}
+            <PredictionResult 
+              prediction={getCancerPrediction(prediction)} 
+              originalImage={prediction.imagen_url}
+              processedImage={prediction.imagen_url}
+            />
           </div>
         )}
       </div>
@@ -191,4 +305,4 @@ const Prediction = () => {
   );
 };
 
-export default Prediction;
+export default PredictionPage;

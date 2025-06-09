@@ -9,6 +9,11 @@ export interface CancerPrediction {
   type: string;
   probability: number;
   isMalignant: boolean;
+  metrics?: {
+    precision: number;
+    recall: number;
+    accuracy: number;
+  };
 }
 
 interface PredictionResultProps {
@@ -67,7 +72,7 @@ const PredictionResult: React.FC<PredictionResultProps> = ({
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium mb-1">Tipo detectado</p>
+                <p className="text-sm font-medium mb-1">Diagnóstico</p>
                 <p className="text-xl font-bold">{prediction.type}</p>
               </div>
               {prediction.isMalignant ? (
@@ -83,18 +88,35 @@ const PredictionResult: React.FC<PredictionResultProps> = ({
             
             <div>
               <div className="flex items-center justify-between mb-1">
-                <p className="text-sm font-medium">Probabilidad</p>
+                <p className="text-sm font-medium">Confianza</p>
                 <p className="text-sm font-medium">{prediction.probability}%</p>
               </div>
               <Progress value={prediction.probability} className={prediction.isMalignant ? "text-red-500" : "text-green-500"} />
             </div>
+
+            {prediction.metrics && (
+              <div className="grid grid-cols-3 gap-4 mt-4">
+                <div className="text-center">
+                  <p className="text-sm font-medium text-muted-foreground">Precisión</p>
+                  <p className="text-lg font-bold">{(prediction.metrics.precision * 100).toFixed(1)}%</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-sm font-medium text-muted-foreground">Recall</p>
+                  <p className="text-lg font-bold">{(prediction.metrics.recall * 100).toFixed(1)}%</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-sm font-medium text-muted-foreground">Exactitud</p>
+                  <p className="text-lg font-bold">{(prediction.metrics.accuracy * 100).toFixed(1)}%</p>
+                </div>
+              </div>
+            )}
             
             <div className="p-3 rounded-lg bg-secondary text-sm">
               <p className="font-semibold mb-1">Notas del análisis:</p>
               <p className="text-muted-foreground">
                 {prediction.isMalignant 
-                  ? 'Se recomienda realizar exámenes adicionales. Esta predicción debe ser confirmada por un especialista médico.' 
-                  : 'No se detectan signos de malignidad. Se recomienda mantener los chequeos médicos regulares.'}
+                  ? 'Se detectaron signos que requieren atención médica inmediata. Consulte con un especialista.' 
+                  : 'No se detectan signos de malignidad en esta imagen. Mantenga los chequeos médicos regulares.'}
               </p>
             </div>
           </div>

@@ -9,7 +9,7 @@ export const userFormSchema = z.object({
     .string()
     .min(6, 'La contraseña debe tener al menos 6 caracteres')
     .optional(),
-  role: z.string(),
+  role: z.enum(['ADMIN', 'DEV', 'MED']),
   status: z.enum(['active', 'inactive']),
 });
 

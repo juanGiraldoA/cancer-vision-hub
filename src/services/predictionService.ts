@@ -1,9 +1,11 @@
 
-const BASE_URL = 'http://127.0.0.1:8000/api';
+const BASE_URL = 'http://localhost:8000/api';
 
 export interface PredictionResult {
   diagnostico: string;
-  region_afectada: string;
+  precision: number;
+  recall: number;
+  accuracy: number;
 }
 
 export interface Prediction {
@@ -14,12 +16,12 @@ export interface Prediction {
   usuario: number;
   usuario_email: string;
   imagen: number;
+  imagen_id: number;
+  imagen_url: string;
 }
 
 export interface CreatePredictionData {
-  resultado: PredictionResult;
-  confidence_score: number;
-  imagen: number;
+  imagen_id: number;
 }
 
 export const predictionService = {
@@ -34,7 +36,8 @@ export const predictionService = {
     });
 
     if (!response.ok) {
-      throw new Error('Failed to create prediction');
+      const errorData = await response.text();
+      throw new Error(`Failed to create prediction: ${errorData}`);
     }
 
     return response.json();
@@ -49,7 +52,8 @@ export const predictionService = {
     });
 
     if (!response.ok) {
-      throw new Error('Failed to fetch predictions');
+      const errorData = await response.text();
+      throw new Error(`Failed to fetch predictions: ${errorData}`);
     }
 
     return response.json();

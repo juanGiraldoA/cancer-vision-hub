@@ -1,7 +1,7 @@
 
 import { User } from '@/types/user';
 
-const BASE_URL = 'http://127.0.0.1:8000/api';
+const BASE_URL = 'http://localhost:8000/api';
 
 export const userService = {
   async getUsers(token: string): Promise<User[]> {
@@ -22,18 +22,19 @@ export const userService = {
       const data = await response.json();
       console.log('Users data received:', data);
       
-      // Asegurar que la respuesta es un array
       if (!Array.isArray(data)) {
         console.error('La respuesta no es un array:', data);
         return [];
       }
       
-      // Mapear los datos del backend a nuestro formato de User
       return data.map((user: any) => {
-        // Map the role correctly - convert from role ID or null to string
-        let roleString = 'USER'; // Default role
+        let roleString: 'ADMIN' | 'DEV' | 'MED' = 'MED'; // Default role
         if (user.role === 1) {
           roleString = 'ADMIN';
+        } else if (user.role === 2) {
+          roleString = 'DEV';
+        } else if (user.role === 3) {
+          roleString = 'MED';
         }
         
         return {
@@ -42,7 +43,7 @@ export const userService = {
           email: user.email || '',
           cc: user.cc || '', 
           role: roleString,
-          status: user.is_active ? 'active' : 'inactive', // Map is_active boolean to our status string
+          status: user.is_active ? 'active' : 'inactive',
           createdAt: user.created_at || new Date().toISOString(),
         };
       });
@@ -53,13 +54,21 @@ export const userService = {
   },
 
   async createUser(user: Omit<User, 'id'>, token: string): Promise<User> {
-    // Transform our User object to match what the API expects
+    const getRoleNumber = (role: string) => {
+      switch (role) {
+        case 'ADMIN': return 1;
+        case 'DEV': return 2;
+        case 'MED': return 3;
+        default: return 3;
+      }
+    };
+
     const apiUser = {
       cc: user.cc,
       email: user.email,
-      role: user.role === 'ADMIN' ? 1 : null, // Convert role string to ID
+      password: "defaultPassword123", // You might want to handle this differently
+      role: getRoleNumber(user.role),
       is_active: user.status === 'active',
-      // Add other fields if needed
     };
 
     const response = await fetch(`${BASE_URL}/usuarios/`, {
@@ -72,29 +81,42 @@ export const userService = {
     });
 
     if (!response.ok) {
-      throw new Error('Failed to create user');
+      const errorData = await response.text();
+      throw new Error(`Failed to create user: ${errorData}`);
     }
 
-    // Convert the API response back to our User format
     const data = await response.json();
+    let roleString: 'ADMIN' | 'DEV' | 'MED' = 'MED';
+    if (data.role === 1) roleString = 'ADMIN';
+    else if (data.role === 2) roleString = 'DEV';
+    else if (data.role === 3) roleString = 'MED';
+
     return {
       id: data.id,
       name: data.username || '',
       email: data.email,
       cc: data.cc,
-      role: data.role === 1 ? 'ADMIN' : 'USER',
+      role: roleString,
       status: data.is_active ? 'active' : 'inactive',
       createdAt: data.created_at || new Date().toISOString(),
     };
   },
 
   async updateUser(id: number, user: Partial<User>, token: string): Promise<User> {
-    // Transform our User object to match what the API expects
+    const getRoleNumber = (role: string) => {
+      switch (role) {
+        case 'ADMIN': return 1;
+        case 'DEV': return 2;
+        case 'MED': return 3;
+        default: return 3;
+      }
+    };
+
     const apiUser: any = {};
     
     if (user.cc !== undefined) apiUser.cc = user.cc;
     if (user.email !== undefined) apiUser.email = user.email;
-    if (user.role !== undefined) apiUser.role = user.role === 'ADMIN' ? 1 : null;
+    if (user.role !== undefined) apiUser.role = getRoleNumber(user.role);
     if (user.status !== undefined) apiUser.is_active = user.status === 'active';
     
     const response = await fetch(`${BASE_URL}/usuarios/${id}/`, {
@@ -107,17 +129,22 @@ export const userService = {
     });
 
     if (!response.ok) {
-      throw new Error('Failed to update user');
+      const errorData = await response.text();
+      throw new Error(`Failed to update user: ${errorData}`);
     }
 
-    // Convert the API response back to our User format
     const data = await response.json();
+    let roleString: 'ADMIN' | 'DEV' | 'MED' = 'MED';
+    if (data.role === 1) roleString = 'ADMIN';
+    else if (data.role === 2) roleString = 'DEV';
+    else if (data.role === 3) roleString = 'MED';
+
     return {
       id: data.id,
       name: data.username || '',
       email: data.email,
       cc: data.cc,
-      role: data.role === 1 ? 'ADMIN' : 'USER',
+      role: roleString,
       status: data.is_active ? 'active' : 'inactive',
       createdAt: data.created_at || new Date().toISOString(),
     };
@@ -133,7 +160,8 @@ export const userService = {
     });
 
     if (!response.ok) {
-      throw new Error('Failed to delete user');
+      const errorData = await response.text();
+      throw new Error(`Failed to delete user: ${errorData}`);
     }
   },
 };

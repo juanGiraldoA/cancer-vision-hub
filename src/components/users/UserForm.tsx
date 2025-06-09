@@ -1,3 +1,4 @@
+
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -24,7 +25,7 @@ export function UserForm({ onSubmit, onCancel, defaultValues, submitLabel, showP
       email: '',
       cc: '',
       password: '',
-      role: 'USER',
+      role: 'MED',
       status: 'active',
       ...defaultValues,
     },
@@ -101,8 +102,9 @@ export function UserForm({ onSubmit, onCancel, defaultValues, submitLabel, showP
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="USER">Usuario</SelectItem>
                     <SelectItem value="ADMIN">Administrador</SelectItem>
+                    <SelectItem value="DEV">Desarrollador</SelectItem>
+                    <SelectItem value="MED">Médico</SelectItem>
                   </SelectContent>
                 </Select>
                 <FormMessage />

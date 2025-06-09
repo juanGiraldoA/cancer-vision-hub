@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { 
   Table, 
@@ -43,6 +44,24 @@ const UserTable: React.FC<UserTableProps> = ({
     handleCreateSubmit,
   } = useUserActions(onUserUpdate, onUserDelete, onUserCreate);
 
+  const getRoleLabel = (role: string) => {
+    switch (role) {
+      case 'ADMIN': return 'Administrador';
+      case 'DEV': return 'Desarrollador';
+      case 'MED': return 'Médico';
+      default: return role;
+    }
+  };
+
+  const getRoleColor = (role: string) => {
+    switch (role) {
+      case 'ADMIN': return 'bg-red-100 text-red-800';
+      case 'DEV': return 'bg-blue-100 text-blue-800';
+      case 'MED': return 'bg-green-100 text-green-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -84,13 +103,9 @@ const UserTable: React.FC<UserTableProps> = ({
                 <TableCell>{user.cc}</TableCell>
                 <TableCell>
                   <span 
-                    className={`px-2 py-1 rounded text-xs font-semibold ${
-                      user.role === 'ADMIN' 
-                        ? 'bg-purple-100 text-purple-800' 
-                        : 'bg-blue-100 text-blue-800'
-                    }`}
+                    className={`px-2 py-1 rounded text-xs font-semibold ${getRoleColor(user.role)}`}
                   >
-                    {user.role === 'ADMIN' ? 'Administrador' : 'Usuario'}
+                    {getRoleLabel(user.role)}
                   </span>
                 </TableCell>
                 <TableCell>
@@ -128,7 +143,7 @@ const UserTable: React.FC<UserTableProps> = ({
 
             {users.length === 0 && (
               <TableRow>
-                <TableCell colSpan={7} className="text-center py-6 text-muted-foreground">
+                <TableCell colSpan={8} className="text-center py-6 text-muted-foreground">
                   No hay usuarios registrados
                 </TableCell>
               </TableRow>

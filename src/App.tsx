@@ -10,6 +10,7 @@ import React from "react";
 import Index from "./pages/Index";
 import Register from "./pages/Register";
 import ForgotPassword from "./pages/ForgotPassword";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
 import Dashboard from "./pages/Dashboard";
 import UserManagement from "./pages/UserManagement";
 import Prediction from "./pages/Prediction";
@@ -34,6 +35,7 @@ const App = () => {
               <Route path="/" element={<Index />} />
               <Route path="/register" element={<Register />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route path="/reset-password/:uidb64/:token" element={<ResetPasswordPage />} />
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/users" element={<UserManagement />} />
               <Route path="/prediction" element={<Prediction />} />

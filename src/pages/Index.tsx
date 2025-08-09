@@ -1,14 +1,17 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import AuthForm from '@/components/AuthForm';
 import { Card, CardContent } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
 import { InfoIcon } from 'lucide-react';
+import RecoverPasswordModal from '@/components/RecoverPasswordModal';
 
 const Index = () => {
   const { login, isAuthenticated, loading } = useAuth();
+  const [showRecoverModal, setShowRecoverModal] = useState(false);
 
   const handleLogin = (data: { cc: string; password: string }) => {
     login(data.cc, data.password);
@@ -49,8 +52,23 @@ const Index = () => {
             onSubmit={handleLogin} 
             loading={loading} 
           />
+          
+          <div className="mt-4 text-center">
+            <Button
+              variant="link"
+              onClick={() => setShowRecoverModal(true)}
+              className="text-sm text-primary hover:text-primary/80 p-0 h-auto"
+            >
+              ¿Olvidaste tu contraseña?
+            </Button>
+          </div>
         </div>
       </div>
+
+      <RecoverPasswordModal 
+        open={showRecoverModal} 
+        onOpenChange={setShowRecoverModal} 
+      />
     </div>
   );
 };

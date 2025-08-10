@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Layout from '@/components/Layout';
 import StatsCard from '@/components/StatsCard';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -16,19 +16,69 @@ import {
 } from 'recharts';
 import { Image, Users, Clock, LineChart as LineChartIcon } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { predictionService, type Prediction } from '@/services/predictionService';
 
-const chartData = [
-  { name: 'Ene', predictions: 10, accuracy: 88 },
-  { name: 'Feb', predictions: 15, accuracy: 91 },
-  { name: 'Mar', predictions: 25, accuracy: 89 },
-  { name: 'Abr', predictions: 18, accuracy: 94 },
-  { name: 'May', predictions: 22, accuracy: 92 },
-  { name: 'Jun', predictions: 30, accuracy: 95 },
-];
 
 const Dashboard = () => {
   const { currentUser } = useAuth();
   const isAdmin = currentUser?.role === 'admin';
+  const [predictions, setPredictions] = useState<Prediction[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchPredictions = async () => {
+      try {
+        const token = localStorage.getItem('accessToken');
+        if (token) {
+          const data = await predictionService.getPredictions(token);
+          setPredictions(data);
+        }
+      } catch (error) {
+        console.error('Error fetching predictions:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPredictions();
+  }, []);
+
+  // Calculate metrics from real data
+  const totalPredictions = predictions.length;
+  const averageAccuracy = predictions.length > 0 
+    ? Math.round(predictions.reduce((sum, p) => sum + (p.resultado.accuracy * 100), 0) / predictions.length)
+    : 0;
+  const averageAnalysisTime = '1.2s'; // This would need to be calculated if the backend provides timing data
+
+  // Group predictions by month for charts
+  const monthlyData = predictions.reduce((acc, prediction) => {
+    const date = new Date(prediction.fecha);
+    const month = date.toLocaleDateString('es-ES', { month: 'short' });
+    const existing = acc.find(item => item.name === month);
+    
+    if (existing) {
+      existing.predictions += 1;
+      existing.totalAccuracy += prediction.resultado.accuracy * 100;
+      existing.accuracy = Math.round(existing.totalAccuracy / existing.predictions);
+    } else {
+      acc.push({
+        name: month,
+        predictions: 1,
+        accuracy: Math.round(prediction.resultado.accuracy * 100),
+        totalAccuracy: prediction.resultado.accuracy * 100
+      });
+    }
+    return acc;
+  }, [] as Array<{ name: string; predictions: number; accuracy: number; totalAccuracy: number }>);
+
+  const chartData = monthlyData.length > 0 ? monthlyData : [
+    { name: 'Ene', predictions: 0, accuracy: 0 },
+    { name: 'Feb', predictions: 0, accuracy: 0 },
+    { name: 'Mar', predictions: 0, accuracy: 0 },
+    { name: 'Abr', predictions: 0, accuracy: 0 },
+    { name: 'May', predictions: 0, accuracy: 0 },
+    { name: 'Jun', predictions: 0, accuracy: 0 },
+  ];
 
   return (
     <Layout>
@@ -43,7 +93,7 @@ const Dashboard = () => {
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <StatsCard
             title="Predicciones Totales"
-            value="130"
+            value={loading ? "..." : totalPredictions.toString()}
             icon={<Image size={18} />}
             trend={{
               value: 12,
@@ -52,7 +102,7 @@ const Dashboard = () => {
           />
           <StatsCard
             title="Precisión Media"
-            value="92%"
+            value={loading ? "..." : `${averageAccuracy}%`}
             icon={<LineChartIcon size={18} />}
             trend={{
               value: 3,
@@ -61,7 +111,7 @@ const Dashboard = () => {
           />
           <StatsCard
             title="Tiempo Medio de Análisis"
-            value="1.2s"
+            value={averageAnalysisTime}
             icon={<Clock size={18} />}
             trend={{
               value: 8,

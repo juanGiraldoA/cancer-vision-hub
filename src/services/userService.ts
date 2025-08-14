@@ -39,7 +39,7 @@ export const userService = {
         
         return {
           id: user.id,
-          name: user.username || '',
+          name: user.name || '',
           email: user.email || '',
           cc: user.cc || '', 
           role: roleString,
@@ -93,7 +93,7 @@ export const userService = {
 
     return {
       id: data.id,
-      name: data.username || '',
+      name: data.name || '',
       email: data.email,
       cc: data.cc,
       role: roleString,
@@ -141,7 +141,7 @@ export const userService = {
 
     return {
       id: data.id,
-      name: data.username || '',
+      name: data.name || '',
       email: data.email,
       cc: data.cc,
       role: roleString,

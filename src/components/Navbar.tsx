@@ -47,12 +47,6 @@ const Navbar = () => {
     <nav className="bg-white shadow-sm border-b">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
-          <div className="flex items-center">
-            <Link to="/dashboard" className="flex items-center">
-              <span className="text-xl font-bold text-primary">CancerVisionHub</span>
-            </Link>
-          </div>
-
           <div className="hidden md:block">
             <div className="flex items-center space-x-1">
               {navItems.map((item) => (
@@ -81,7 +75,7 @@ const Navbar = () => {
                       <User size={18} className="text-primary" />
                     </div>
                     <span className="ml-2 text-sm font-medium hidden md:block">
-                      {currentUser?.name || 'Usuario'}
+                      {currentUser?.email || 'Usuario'}
                     </span>
                   </div>
                 </Button>
